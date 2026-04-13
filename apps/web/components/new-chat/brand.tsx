@@ -16,7 +16,7 @@ type BrandFooterProps = {
 
 export function BrandLogo({ className = "", compact = false, showLabel = true, theme = "dark" }: BrandLogoProps) {
   const titleClass = theme === "light" ? "text-white" : "text-charcoal";
-  const bodyClass = theme === "light" ? "text-white/72" : "text-graphite/62";
+  const bodyClass = theme === "light" ? "text-white/84" : "text-graphite/62";
 
   return (
     <div className={`flex items-center gap-3 ${className}`.trim()}>

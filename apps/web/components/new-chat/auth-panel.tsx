@@ -70,15 +70,16 @@ export function AuthPanel({ onSession }: { onSession: (session: AuthSession) => 
       <section className="grid w-full max-w-5xl overflow-hidden rounded-lg border border-charcoal/10 bg-cloud/90 shadow-2xl shadow-charcoal/10 backdrop-blur lg:grid-cols-[1.2fr_420px]">
         <div className="relative hidden min-h-[720px] overflow-hidden lg:block">
           <img alt="Omochat workspace" className="h-full w-full object-cover" src={detailImage} />
-          <div className="absolute inset-0 bg-gradient-to-br from-honey/35 via-transparent to-blush/50" />
-          <div className="absolute inset-0 flex flex-col justify-end p-8">
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(242,193,79,0.16),rgba(255,255,255,0)_42%,rgba(217,138,209,0.18))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,13,10,0.06),rgba(17,13,10,0.28)_48%,rgba(17,13,10,0.78))]" />
+          <div className="absolute inset-x-6 bottom-6 rounded-[30px] border border-white/16 bg-[rgba(22,17,13,0.48)] p-6 shadow-[0_24px_60px_rgba(12,10,8,0.28)] backdrop-blur-md">
             <BrandLogo theme="light" />
-            <h1 className="font-display mt-3 max-w-md text-[2.5rem] font-bold leading-tight text-charcoal text-gray-100 sm:text-[3.15rem]">
+            <h1 className="font-display mt-6 max-w-lg text-[2.5rem] font-bold leading-[1.02] text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)] sm:text-[3.15rem]">
               State-of-the-art chat, calm enough to live in.
             </h1>
-            <p className="mt-4 max-w-md text-[14px] leading-7 text-graphite/50 text-gray-200">
+            <p className="mt-4 max-w-md text-[15px] leading-7 text-white/88">
               Sign in with email, username, verified phone, or your short identity code. Every new account now gets a unique tag like{" "}
-              <span className="font-bold">@23yg2</span>.
+              <span className="font-bold text-white">@23yg2</span>.
             </p>
           </div>
         </div>
