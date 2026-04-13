@@ -3984,39 +3984,41 @@ export function NewChatShell() {
           }`}
         >
           <div className="border-b border-charcoal/10 px-5 py-5">
-            <div className="rounded-[28px] border border-charcoal/10 bg-charcoal p-5 text-cloud shadow-[0_24px_60px_rgba(23,22,19,0.18)]">
-              <div className="flex items-center justify-between gap-2 text-cloud/72">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  <p className="text-xs font-bold uppercase tracking-[0.24em]">Room snapshot</p>
+            <div className="rounded-[24px] border border-charcoal/10 bg-white/92 p-4 shadow-[0_14px_34px_rgba(23,22,19,0.08)]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-graphite/55">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Room snapshot
+                  </p>
                 </div>
                 <button
-                  className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-cloud transition hover:bg-white/16"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-[#faf7f2] text-graphite/70 transition hover:text-charcoal"
                   onClick={() => setIsDetailsPanelOpen(false)}
                   type="button"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <h3 className="font-display mt-3 text-[24px] font-bold leading-tight">{activeRoomLabel ?? "No room selected"}</h3>
-              <p className="mt-3 text-[13px] leading-6 text-cloud/74">
+              <h3 className="font-display mt-3 text-[22px] font-bold leading-tight text-charcoal">{activeRoomLabel ?? "No room selected"}</h3>
+              <p className="mt-2 text-sm leading-6 text-graphite/70">
                 {activeConversation
                   ? isGroupThread
                     ? "Add members, share a join link, and keep admin control close by."
                     : "Messages, reactions, and participants stay live in one calmer workspace."
                   : "Pick a room from the left, or search for someone new to start chatting."}
               </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-cloud">
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[#f4eee2] px-3 py-2 text-xs font-semibold text-graphite/78">
                   <Hash className="h-3.5 w-3.5" />
                   {activeRoomType ?? "Inbox"}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-cloud">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[#f4eee2] px-3 py-2 text-xs font-semibold text-graphite/78">
                   <Users className="h-3.5 w-3.5" />
                   {activeConversation ? `${activeMembers.length} participants` : "No active room"}
                 </span>
                 {activeOwner ? (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-cloud">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#f4eee2] px-3 py-2 text-xs font-semibold text-graphite/78">
                     <Crown className="h-3.5 w-3.5" />
                     {activeOwner.user.displayName} leads
                   </span>
@@ -4034,7 +4036,7 @@ export function NewChatShell() {
           </div>
 
           <div className="border-b border-charcoal/10 px-5 py-5">
-            <div className="rounded-[24px] border border-charcoal/10 bg-white/84 p-4">
+            <div className="rounded-[20px] border border-charcoal/10 bg-white p-4 shadow-[0_10px_24px_rgba(24,18,15,0.04)]">
               <div className="flex items-center gap-2">
                 <MessageSquareText className="h-4 w-4 text-graphite/58" />
                 <p className="text-xs font-bold uppercase tracking-[0.24em] text-graphite/55">Why this room?</p>
@@ -4046,7 +4048,7 @@ export function NewChatShell() {
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             {isGroupThread && activeConversation ? (
               <div className="space-y-5 border-b border-charcoal/10 pb-5">
-                <div className="rounded-[24px] border border-charcoal/10 bg-white/84 p-4">
+                <div className="rounded-[20px] border border-charcoal/10 bg-white p-4 shadow-[0_10px_24px_rgba(24,18,15,0.04)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.22em] text-graphite/55">Join link</p>
@@ -4076,7 +4078,7 @@ export function NewChatShell() {
                   ) : null}
                 </div>
 
-                <div className="rounded-[24px] border border-charcoal/10 bg-white/84 p-4">
+                <div className="rounded-[20px] border border-charcoal/10 bg-white p-4 shadow-[0_10px_24px_rgba(24,18,15,0.04)]">
                   <div className="flex items-center gap-2">
                     <UserPlus className="h-4 w-4 text-graphite/58" />
                     <p className="text-xs font-bold uppercase tracking-[0.22em] text-graphite/55">Add members</p>
@@ -4131,11 +4133,11 @@ export function NewChatShell() {
 
             <div className="mt-5 flex items-center gap-2">
               <Users className="h-4 w-4 text-graphite/58" />
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-graphite">People here</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-graphite/72">People here</p>
             </div>
             <div className="mt-3 space-y-3">
               {activeParticipants.length === 0 ? (
-                <div className="rounded-[24px] border border-charcoal/8 bg-white/74 px-4 py-4 text-sm leading-6 text-graphite/72">
+                <div className="rounded-[20px] border border-charcoal/10 bg-white px-4 py-4 text-sm leading-6 text-graphite/72">
                   Room participants will appear here once you open a conversation.
                 </div>
               ) : (
@@ -4147,7 +4149,7 @@ export function NewChatShell() {
                     canPromoteActiveGroupMembers && participant.role !== "OWNER" && participant.userId !== viewer.id;
 
                   return (
-                    <div className="rounded-[24px] border border-charcoal/8 bg-white/84 px-3 py-3" key={participant.id}>
+                    <div className="rounded-[20px] border border-charcoal/10 bg-white px-3 py-3 shadow-[0_8px_20px_rgba(24,18,15,0.03)]" key={participant.id}>
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           {avatarBadge(member.displayName, member.avatarUrl, "h-11 w-11")}
@@ -4214,7 +4216,7 @@ export function NewChatShell() {
                   </div>
                 ) : null}
                 <button
-                  className="flex w-full items-center justify-between rounded-[20px] border border-charcoal/10 bg-white/84 px-4 py-3 text-left text-sm font-semibold text-charcoal transition hover:border-charcoal/18"
+                  className="flex w-full items-center justify-between rounded-[18px] border border-charcoal/10 bg-white px-4 py-3 text-left text-sm font-semibold text-charcoal transition hover:border-charcoal/18"
                   onClick={() => {
                     setIsReportOpen(true);
                   }}
@@ -4227,7 +4229,7 @@ export function NewChatShell() {
                   <ArrowRight className="h-4 w-4 text-graphite/55" />
                 </button>
                 <button
-                  className="flex w-full items-center justify-between rounded-[20px] border border-red-200 bg-red-50/70 px-4 py-3 text-left text-sm font-semibold text-red-700 transition hover:border-red-300 disabled:opacity-50"
+                  className="flex w-full items-center justify-between rounded-[18px] border border-red-200 bg-[#fff5f2] px-4 py-3 text-left text-sm font-semibold text-red-700 transition hover:border-red-300 disabled:opacity-50"
                   disabled={isGroupActionBusy || canPromoteActiveGroupMembers}
                   onClick={() => {
                     void handleLeaveActiveGroup().catch(() => undefined);
@@ -7377,42 +7379,42 @@ function CompactChatWorkspace({
 
           {isDetailsPanelOpen ? (
             <aside className="absolute inset-y-0 right-0 z-40 flex w-full max-w-[380px] flex-col border-l border-charcoal/10 bg-[#f8f5ef] shadow-[-24px_0_60px_rgba(24,18,15,0.12)]">
-              <div className="border-b border-charcoal/10 px-5 py-5">
-                <div className="rounded-[28px] border border-charcoal/10 bg-charcoal p-5 text-cloud shadow-[0_24px_60px_rgba(23,22,19,0.18)]">
-                  <div className="flex items-center justify-between gap-2 text-cloud/72">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      <p className="text-xs font-bold uppercase tracking-[0.24em]">
+              <div className="border-b border-charcoal/10 px-4 py-4 sm:px-5 sm:py-5">
+                <div className="rounded-[22px] border border-charcoal/10 bg-white/92 p-4 shadow-[0_14px_34px_rgba(23,22,19,0.08)] sm:rounded-[24px]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-graphite/55">
+                        <Sparkles className="h-3.5 w-3.5" />
                         {detailsPanelView === "MEMBERS" ? "Member controls" : "Room details"}
                       </p>
                     </div>
                     <button
-                      className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-cloud transition hover:bg-white/16"
+                      className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-[#faf7f2] text-graphite/70 transition hover:text-charcoal"
                       onClick={() => setIsDetailsPanelOpen(false)}
                       type="button"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-                  <h3 className="mt-3 text-[24px] font-semibold leading-tight">{activeRoomLabel ?? "No room selected"}</h3>
-                  <p className="mt-3 text-[13px] leading-6 text-cloud/74">
+                  <h3 className="mt-3 text-[22px] font-semibold leading-tight text-charcoal">{activeRoomLabel ?? "No room selected"}</h3>
+                  <p className="mt-2 text-sm leading-6 text-graphite/70">
                     {activeConversation
                       ? isGroupThread
                         ? "Add members, share a join link, and keep admin control close by."
                         : "Messages and participants stay live in one calmer workspace."
                       : "Pick a room from the left, or search for someone new to start chatting."}
                   </p>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-cloud">
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-[#f4eee2] px-3 py-2 text-xs font-semibold text-graphite/78">
                       <Hash className="h-3.5 w-3.5" />
                       {activeRoomType ?? "Inbox"}
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-cloud">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-[#f4eee2] px-3 py-2 text-xs font-semibold text-graphite/78">
                       <Users className="h-3.5 w-3.5" />
                       {activeConversation ? `${activeMembers.length} participants` : "No active room"}
                     </span>
                     {activeOwner ? (
-                      <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-cloud">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-[#f4eee2] px-3 py-2 text-xs font-semibold text-graphite/78">
                         <Crown className="h-3.5 w-3.5" />
                         {activeOwner.user.displayName} leads
                       </span>
@@ -7424,7 +7426,7 @@ function CompactChatWorkspace({
               <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
                 {isGroupThread && activeConversation ? (
                   <div className="space-y-5 border-b border-charcoal/10 pb-5">
-                    <div className="rounded-[24px] border border-charcoal/10 bg-white/84 p-4">
+                    <div className="rounded-[20px] border border-charcoal/10 bg-white p-4 shadow-[0_10px_24px_rgba(24,18,15,0.04)]">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-xs font-bold uppercase tracking-[0.22em] text-graphite/55">Join link</p>
@@ -7454,7 +7456,7 @@ function CompactChatWorkspace({
                       ) : null}
                     </div>
 
-                    <div className="rounded-[24px] border border-charcoal/10 bg-white/84 p-4">
+                    <div className="rounded-[20px] border border-charcoal/10 bg-white p-4 shadow-[0_10px_24px_rgba(24,18,15,0.04)]">
                       <div className="flex items-center gap-2">
                         <UserPlus className="h-4 w-4 text-graphite/58" />
                         <p className="text-xs font-bold uppercase tracking-[0.22em] text-graphite/55">Add members</p>
@@ -7510,11 +7512,11 @@ function CompactChatWorkspace({
 
                 <div className="mt-5 flex items-center gap-2">
                   <Users className="h-4 w-4 text-graphite/58" />
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-graphite">People here</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-graphite/72">People here</p>
                 </div>
                 <div className="mt-3 space-y-3">
                   {activeParticipants.length === 0 ? (
-                    <div className="rounded-[24px] border border-charcoal/8 bg-white/74 px-4 py-4 text-sm leading-6 text-graphite/72">
+                    <div className="rounded-[20px] border border-charcoal/10 bg-white px-4 py-4 text-sm leading-6 text-graphite/72">
                       Room participants will appear here once you open a conversation.
                     </div>
                   ) : (
@@ -7524,7 +7526,7 @@ function CompactChatWorkspace({
                         canPromoteActiveGroupMembers && participant.role !== "OWNER" && participant.userId !== viewer.id;
 
                       return (
-                        <div className="rounded-[24px] border border-charcoal/8 bg-white/84 px-3 py-3" key={participant.id}>
+                        <div className="rounded-[20px] border border-charcoal/10 bg-white px-3 py-3 shadow-[0_8px_20px_rgba(24,18,15,0.03)]" key={participant.id}>
                           <div className="flex items-center gap-3">
                             {avatarBadge(member.displayName, member.avatarUrl, "h-11 w-11")}
                             <div className="min-w-0 flex-1">
@@ -7586,7 +7588,7 @@ function CompactChatWorkspace({
                       </div>
                     ) : null}
                     <button
-                      className="flex w-full items-center justify-between rounded-[20px] border border-charcoal/10 bg-white/84 px-4 py-3 text-left text-sm font-semibold text-charcoal transition hover:border-charcoal/18"
+                      className="flex w-full items-center justify-between rounded-[18px] border border-charcoal/10 bg-white px-4 py-3 text-left text-sm font-semibold text-charcoal transition hover:border-charcoal/18"
                       onClick={() => {
                         setIsReportOpen(true);
                       }}
@@ -7599,7 +7601,7 @@ function CompactChatWorkspace({
                       <ArrowRight className="h-4 w-4 text-graphite/55" />
                     </button>
                     <button
-                      className="flex w-full items-center justify-between rounded-[20px] border border-red-200 bg-red-50/70 px-4 py-3 text-left text-sm font-semibold text-red-700 transition hover:border-red-300 disabled:opacity-50"
+                      className="flex w-full items-center justify-between rounded-[18px] border border-red-200 bg-[#fff5f2] px-4 py-3 text-left text-sm font-semibold text-red-700 transition hover:border-red-300 disabled:opacity-50"
                       disabled={isGroupActionBusy || canPromoteActiveGroupMembers}
                       onClick={() => {
                         void handleLeaveActiveGroup().catch(() => undefined);
