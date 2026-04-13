@@ -254,6 +254,7 @@ export function NewChatShell() {
   const [statusNotice, setStatusNotice] = useState("");
   const [statusReplyDraft, setStatusReplyDraft] = useState("");
   const [isStatusBusy, setIsStatusBusy] = useState(false);
+  const [isStatusActivityOpen, setIsStatusActivityOpen] = useState(false);
   const [phoneDraft, setPhoneDraft] = useState("");
   const [phoneCode, setPhoneCode] = useState("");
   const [phoneCodeSent, setPhoneCodeSent] = useState(false);
@@ -2806,6 +2807,22 @@ export function NewChatShell() {
     }
   }
 
+  function handleStatusBack() {
+    if (activeStatusDetail) {
+      setActiveStatusThreadId(null);
+      setActiveStatusIndex(0);
+      setActiveStatusDetail(null);
+      setStatusReplyDraft("");
+      setStatusNotice("");
+      setIsStatusActivityOpen(false);
+      return;
+    }
+
+    setSidebarMode("CHATS");
+    setStatusNotice("");
+    setIsStatusActivityOpen(false);
+  }
+
   async function handlePickStatusMedia(files: FileList | null) {
     if (!files?.length) {
       return;
@@ -3253,6 +3270,7 @@ export function NewChatShell() {
     draftTextColor: statusDraftTextColor,
     draftTtlHours: statusDraftTtlHours,
     feed: statusFeed,
+    isActivityOpen: isStatusActivityOpen,
     isBusy: isStatusBusy,
     isComposerOpen: isStatusComposerOpen,
     notice: statusNotice,
@@ -3261,6 +3279,7 @@ export function NewChatShell() {
   };
   const statusActions = {
     handleCreateStatus,
+    handleStatusBack,
     handleDeleteCurrentStatus,
     handleModerateCurrentStatus,
     handlePickStatusMedia,
@@ -3268,6 +3287,7 @@ export function NewChatShell() {
     handleReplyToStatus,
     openStatusComposer,
     selectStatusThread,
+    setIsStatusActivityOpen,
     setIsStatusComposerOpen,
     setStatusComposerMode,
     setStatusDraftBackgroundColor,
@@ -4284,6 +4304,7 @@ type StatusLaneState = {
   draftTextColor: string;
   draftTtlHours: string;
   feed: StatusFeed | null;
+  isActivityOpen: boolean;
   isBusy: boolean;
   isComposerOpen: boolean;
   notice: string;
@@ -4293,6 +4314,7 @@ type StatusLaneState = {
 
 type StatusLaneActions = {
   handleCreateStatus: () => Promise<void>;
+  handleStatusBack: () => void;
   handleDeleteCurrentStatus: () => Promise<void>;
   handleModerateCurrentStatus: (input: { remove?: boolean; expiresInHours?: number; removedReason?: string }) => Promise<void>;
   handlePickStatusMedia: (files: FileList | null) => Promise<void>;
@@ -4300,6 +4322,7 @@ type StatusLaneActions = {
   handleReplyToStatus: () => Promise<void>;
   openStatusComposer: (mode?: StatusComposerMode) => void;
   selectStatusThread: (ownerId: string, statusId?: string) => void;
+  setIsStatusActivityOpen: (value: boolean) => void;
   setIsStatusComposerOpen: (value: boolean) => void;
   setStatusComposerMode: (value: StatusComposerMode) => void;
   setStatusDraftBackgroundColor: (value: string) => void;
@@ -4685,6 +4708,7 @@ function CompactChatWorkspace({
     draftTextColor: statusDraftTextColor,
     draftTtlHours: statusDraftTtlHours,
     feed: statusFeed,
+    isActivityOpen: isStatusActivityOpen,
     isBusy: isStatusBusy,
     isComposerOpen: isStatusComposerOpen,
     notice: statusNotice,
@@ -4693,6 +4717,7 @@ function CompactChatWorkspace({
   } = statusState;
   const {
     handleCreateStatus,
+    handleStatusBack,
     handleDeleteCurrentStatus,
     handleModerateCurrentStatus,
     handlePickStatusMedia,
@@ -4700,6 +4725,7 @@ function CompactChatWorkspace({
     handleReplyToStatus,
     openStatusComposer,
     selectStatusThread,
+    setIsStatusActivityOpen,
     setIsStatusComposerOpen,
     setStatusComposerMode,
     setStatusDraftBackgroundColor,
@@ -4779,8 +4805,49 @@ function CompactChatWorkspace({
       }).format(new Date(activeStatusDetail.expiresAt))
     : "";
   const isStatusOwner = activeStatusDetail?.owner.id === viewer.id;
+  const activeStatusThreadIndex = activeStatusThread
+    ? statusThreads.findIndex((thread) => thread.owner.id === activeStatusThread.owner.id)
+    : -1;
+  const canStepStatusBackward = Boolean(activeStatusThread && (activeStatusIndex > 0 || activeStatusThreadIndex > 0));
+  const canStepStatusForward = Boolean(
+    activeStatusThread &&
+      activeStatusThreadIndex >= 0 &&
+      (activeStatusIndex < activeStatusThread.items.length - 1 || activeStatusThreadIndex < statusThreads.length - 1)
+  );
   const statusModerationAccess = viewer.access.isModerator || viewer.access.isPlatformAdmin || viewer.access.isSiteAdmin;
+  const canOpenStatusActivity = Boolean(activeStatusDetail && (isStatusOwner || statusModerationAccess));
+  const statusReactionSummary = useMemo(() => {
+    if (!activeStatusDetail) {
+      return [];
+    }
+
+    const grouped = new Map<string, { emoji: string; count: number; mine: boolean }>();
+    activeStatusDetail.reactions.forEach((reaction) => {
+      const current = grouped.get(reaction.emoji);
+      if (current) {
+        current.count += 1;
+        current.mine = current.mine || reaction.user.id === viewer.id;
+        return;
+      }
+
+      grouped.set(reaction.emoji, {
+        emoji: reaction.emoji,
+        count: 1,
+        mine: reaction.user.id === viewer.id
+      });
+    });
+
+    return [...grouped.values()].sort((left, right) => right.count - left.count);
+  }, [activeStatusDetail, viewer.id]);
   const showComposerSearch = !(sidebarMode === "CHATS" && isComposerOpen && composerStage === "DETAILS");
+  useEffect(() => {
+    if (sidebarMode !== "STATUS" || !activeStatusDetail || (!isStatusOwner && !statusModerationAccess)) {
+      setIsStatusActivityOpen(false);
+    }
+  }, [activeStatusDetail, isStatusOwner, sidebarMode, statusModerationAccess]);
+  useEffect(() => {
+    setIsStatusActivityOpen(false);
+  }, [activeStatusDetail?.id]);
   const composerCanContinue = composerMode === "GROUP" ? composerParticipants.length > 0 : true;
   const [openMessageMenuId, setOpenMessageMenuId] = useState<string | null>(null);
   const [isComposerToolsOpen, setIsComposerToolsOpen] = useState(false);
@@ -6013,28 +6080,32 @@ function CompactChatWorkspace({
                 {isViewingStatuses ? (
                   <>
                     <button
-                      className="rounded-full border border-charcoal/10 bg-white px-3 py-2 text-[11px] font-semibold text-charcoal transition hover:border-charcoal/20 disabled:opacity-50 sm:px-4 sm:text-xs"
-                      disabled={!activeStatusThread}
-                      onClick={() => stepStatus("previous")}
+                      className="inline-flex items-center gap-2 rounded-full border border-charcoal/10 bg-white px-3 py-2 text-[11px] font-semibold text-charcoal transition hover:border-charcoal/20 sm:px-4 sm:text-xs"
+                      onClick={handleStatusBack}
                       type="button"
                     >
-                      Prev
+                      <ArrowRight className="h-4 w-4 rotate-180" />
+                      Back
                     </button>
-                    <button
-                      className="rounded-full border border-charcoal/10 bg-white px-3 py-2 text-[11px] font-semibold text-charcoal transition hover:border-charcoal/20 disabled:opacity-50 sm:px-4 sm:text-xs"
-                      disabled={!activeStatusThread}
-                      onClick={() => stepStatus("next")}
-                      type="button"
-                    >
-                      Next
-                    </button>
-                    <button
-                      className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal sm:h-10 sm:w-10"
-                      onClick={() => openStatusComposer("TEXT")}
-                      type="button"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
+                    {canOpenStatusActivity ? (
+                      <button
+                        className="inline-flex items-center gap-2 rounded-full border border-charcoal/10 bg-white px-3 py-2 text-[11px] font-semibold text-charcoal transition hover:border-charcoal/20 sm:px-4 sm:text-xs"
+                        onClick={() => setIsStatusActivityOpen(true)}
+                        type="button"
+                      >
+                        <PanelRightOpen className="h-4 w-4" />
+                        {isStatusOwner ? "Activity" : "Moderate"}
+                      </button>
+                    ) : null}
+                    {isStatusOwner ? (
+                      <button
+                        className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal sm:h-10 sm:w-10"
+                        onClick={() => openStatusComposer("TEXT")}
+                        type="button"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    ) : null}
                   </>
                 ) : (
                   <>
@@ -6228,7 +6299,467 @@ function CompactChatWorkspace({
           <div className="min-h-0 flex-1 overflow-y-auto bg-[#efe6d7] px-2 py-3 [background-image:radial-gradient(circle_at_1px_1px,rgba(120,98,68,0.08)_1px,transparent_0)] [background-size:18px_18px] sm:px-6 sm:py-6 sm:[background-size:24px_24px] xl:px-8">
             <div className="mx-auto flex min-h-full w-full max-w-[1280px] flex-col">
               {isViewingStatuses ? (
-                <div className="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="relative flex min-h-[calc(100dvh-210px)] flex-1 items-center justify-center overflow-hidden rounded-[38px] border border-charcoal/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.24),rgba(26,20,17,0.96)_70%)] px-3 py-4 shadow-[0_28px_60px_rgba(24,18,15,0.12)] sm:px-6 sm:py-6">
+                  <div className="pointer-events-none absolute inset-0">
+                    <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#f4d7d0]/18 to-transparent blur-3xl" />
+                    <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-[#c8d6e8]/18 to-transparent blur-3xl" />
+                    {activeStatusDetail?.media && !activeStatusDetail.media.mimeType.startsWith("video/") ? (
+                      <div
+                        className="absolute inset-0 scale-110 bg-cover bg-center opacity-25 blur-3xl"
+                        style={{ backgroundImage: `url(${activeStatusDetail.media.url})` }}
+                      />
+                    ) : null}
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(12,10,9,0.36)_45%,rgba(12,10,9,0.7))]" />
+                  </div>
+
+                  {statusNotice ? (
+                    <div className="absolute left-1/2 top-4 z-20 w-full max-w-[420px] -translate-x-1/2 px-3">
+                      <div className="rounded-full border border-white/12 bg-white/12 px-4 py-3 text-center text-sm font-medium text-white/92 shadow-[0_16px_40px_rgba(0,0,0,0.2)] backdrop-blur">
+                        {statusNotice}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {activeStatusDetail ? (
+                    <>
+                      {canStepStatusBackward ? (
+                        <button
+                          className="absolute left-3 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/16 bg-black/26 text-white shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur transition hover:bg-black/36 sm:left-6 sm:h-12 sm:w-12"
+                          onClick={() => stepStatus("previous")}
+                          type="button"
+                        >
+                          <ArrowRight className="h-5 w-5 rotate-180" />
+                        </button>
+                      ) : null}
+
+                      {canStepStatusForward ? (
+                        <button
+                          className="absolute right-3 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/16 bg-black/26 text-white shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur transition hover:bg-black/36 sm:right-6 sm:h-12 sm:w-12"
+                          onClick={() => stepStatus("next")}
+                          type="button"
+                        >
+                          <ArrowRight className="h-5 w-5" />
+                        </button>
+                      ) : null}
+
+                      <div className="relative z-10 w-full max-w-[560px]">
+                        <article className="relative overflow-hidden rounded-[34px] border border-white/12 bg-[#181311] text-cloud shadow-[0_32px_80px_rgba(0,0,0,0.34)]">
+                          <div className="pointer-events-none absolute inset-0">
+                            {activeStatusDetail.media && !activeStatusDetail.media.mimeType.startsWith("video/") ? (
+                              <div
+                                className="absolute inset-0 bg-cover bg-center opacity-38"
+                                style={{ backgroundImage: `url(${activeStatusDetail.media.url})` }}
+                              />
+                            ) : null}
+                            <div
+                              className="absolute inset-0"
+                              style={
+                                activeStatusDetail.media
+                                  ? { background: "linear-gradient(180deg, rgba(10,10,10,0.24), rgba(10,10,10,0.68) 72%, rgba(10,10,10,0.92))" }
+                                  : {
+                                      background: `linear-gradient(135deg, ${activeStatusDetail.backgroundColor ?? "#704a35"}, #e3b34c)`
+                                    }
+                              }
+                            />
+                            <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/28 to-transparent" />
+                            <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/72 to-transparent" />
+                          </div>
+
+                          <div className="relative z-10 flex min-h-[720px] flex-col sm:min-h-[760px]">
+                            <div className="px-4 pt-4 sm:px-5 sm:pt-5">
+                              <div className="flex items-center gap-2">
+                                {activeStatusThread?.items.map((item, index) => (
+                                  <span
+                                    className={`h-1.5 flex-1 rounded-full ${
+                                      index < activeStatusIndex
+                                        ? "bg-white"
+                                        : index === activeStatusIndex
+                                          ? "bg-[linear-gradient(90deg,#d98ad1,#f2c14f)]"
+                                          : "bg-white/22"
+                                    }`}
+                                    key={item.id}
+                                  />
+                                ))}
+                              </div>
+
+                              <div className="mt-4 flex items-start justify-between gap-3">
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <button
+                                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/14 bg-black/22 text-white backdrop-blur transition hover:bg-black/34"
+                                    onClick={handleStatusBack}
+                                    type="button"
+                                  >
+                                    <ArrowRight className="h-4 w-4 rotate-180" />
+                                  </button>
+                                  <div className="flex min-w-0 items-center gap-3">
+                                    {avatarBadge(activeStatusDetail.owner.displayName, activeStatusDetail.owner.avatarUrl, "h-12 w-12")}
+                                    <div className="min-w-0">
+                                      <p className="truncate text-sm font-semibold text-white">{activeStatusDetail.owner.displayName}</p>
+                                      <p className="truncate text-xs text-white/72">
+                                        {formatMessageTime(activeStatusDetail.createdAt)} {" - "} {formatUserTag(activeStatusDetail.owner)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex shrink-0 items-center gap-2">
+                                  {canOpenStatusActivity ? (
+                                    <button
+                                      className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-black/22 px-3 py-2 text-xs font-semibold text-white/90 backdrop-blur transition hover:bg-black/34"
+                                      onClick={() => setIsStatusActivityOpen(true)}
+                                      type="button"
+                                    >
+                                      <PanelRightOpen className="h-4 w-4" />
+                                      {isStatusOwner ? "Activity" : "Moderate"}
+                                    </button>
+                                  ) : null}
+                                  <span className="rounded-full border border-white/14 bg-black/22 px-3 py-2 text-xs font-semibold text-white/82 backdrop-blur">
+                                    {activeStatusIndex + 1}/{activeStatusThread?.items.length ?? 1}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
+                              {activeStatusDetail.media ? (
+                                activeStatusDetail.media.mimeType.startsWith("video/") ? (
+                                  <video
+                                    autoPlay
+                                    className="max-h-[540px] w-full rounded-[30px] border border-white/12 bg-black/70 object-contain shadow-[0_24px_70px_rgba(0,0,0,0.38)]"
+                                    controls
+                                    loop
+                                    muted
+                                    src={activeStatusDetail.media.url}
+                                  />
+                                ) : (
+                                  <img
+                                    alt={activeStatusDetail.caption ?? "Status media"}
+                                    className="max-h-[560px] w-full rounded-[30px] border border-white/12 object-contain shadow-[0_24px_70px_rgba(0,0,0,0.38)]"
+                                    src={activeStatusDetail.media.url}
+                                  />
+                                )
+                              ) : (
+                                <div className="mx-auto max-w-[420px] text-center">
+                                  <p
+                                    className="text-[2.35rem] font-semibold leading-[1.14] sm:text-[3rem]"
+                                    style={{ color: activeStatusDetail.textColor ?? "#fffdf8" }}
+                                  >
+                                    {activeStatusDetail.text}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="space-y-4 px-4 pb-4 pt-2 sm:px-5 sm:pb-5">
+                              {activeStatusDetail.caption ? (
+                                <p className="max-w-[92%] text-sm leading-7 text-white/88">{activeStatusDetail.caption}</p>
+                              ) : null}
+
+                              <div className="flex flex-wrap gap-2">
+                                {reactionCatalog.map((reaction) => (
+                                  <button
+                                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold backdrop-blur transition ${
+                                      activeStatusDetail.myReaction?.emoji === reaction.emoji
+                                        ? "border-white/75 bg-white text-charcoal"
+                                        : "border-white/14 bg-black/22 text-white hover:bg-black/34"
+                                    }`}
+                                    key={`status-${activeStatusDetail.id}-${reaction.emoji}`}
+                                    onClick={() => {
+                                      void handleReactToStatus(reaction.emoji).catch(() => undefined);
+                                    }}
+                                    type="button"
+                                  >
+                                    <span>{reaction.emoji}</span>
+                                    {reaction.label}
+                                  </button>
+                                ))}
+                              </div>
+
+                              {!isStatusOwner ? (
+                                <div className="flex items-center gap-2 rounded-[24px] border border-white/14 bg-black/22 px-3 py-3 text-white backdrop-blur">
+                                  <Reply className="h-4 w-4 shrink-0 text-white/72" />
+                                  <input
+                                    className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/48"
+                                    onChange={(event) => setStatusReplyDraft(event.target.value)}
+                                    placeholder="Reply privately to this status"
+                                    value={statusReplyDraft}
+                                  />
+                                  <button
+                                    className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-charcoal transition hover:bg-[#f8f5ef] disabled:cursor-not-allowed disabled:opacity-60"
+                                    disabled={!statusReplyDraft.trim() || isStatusBusy || Boolean(activeStatusDetail.removedAt)}
+                                    onClick={() => {
+                                      void handleReplyToStatus().catch(() => undefined);
+                                    }}
+                                    type="button"
+                                  >
+                                    Send
+                                  </button>
+                                </div>
+                              ) : (
+                                <p className="text-xs leading-6 text-white/68">
+                                  Replies, reactions, and viewers stay in your private activity sheet so the story itself stays clean.
+                                </p>
+                              )}
+
+                              {activeStatusDetail.removedAt ? (
+                                <p className="rounded-[20px] border border-white/14 bg-black/22 px-4 py-3 text-xs leading-6 text-white/82 backdrop-blur">
+                                  This status is currently down. {activeStatusDetail.removedReason ?? "Moderation removed it from the live lane."}
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+                        </article>
+                      </div>
+
+                      {canOpenStatusActivity && isStatusActivityOpen ? (
+                        <div
+                          className="absolute inset-0 z-30 flex items-center justify-center bg-[rgba(8,7,7,0.58)] px-3 py-6 backdrop-blur-sm sm:px-6"
+                          onClick={() => setIsStatusActivityOpen(false)}
+                        >
+                          <div
+                            className="w-full max-w-[460px] overflow-hidden rounded-[32px] border border-white/10 bg-[#f8f3ea] text-charcoal shadow-[0_30px_80px_rgba(0,0,0,0.32)]"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <div className="flex items-start justify-between gap-4 border-b border-charcoal/8 px-5 py-5">
+                              <div>
+                                <p className="text-xs font-bold uppercase tracking-[0.24em] text-graphite/55">
+                                  {isStatusOwner ? "Status activity" : "Moderation"}
+                                </p>
+                                <h3 className="mt-2 text-[1.55rem] font-semibold text-charcoal">
+                                  {isStatusOwner ? "Private story activity" : "Moderate this status"}
+                                </h3>
+                                <p className="mt-2 text-sm leading-7 text-graphite/68">
+                                  {isStatusOwner
+                                    ? "Only you can see who viewed, replied to, or reacted to this status."
+                                    : "Take action on this status without exposing moderation controls in the public viewer."}
+                                </p>
+                              </div>
+                              <button
+                                className="grid h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-charcoal transition hover:bg-[#f5eee4]"
+                                onClick={() => setIsStatusActivityOpen(false)}
+                                type="button"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            <div className="max-h-[75vh] space-y-5 overflow-y-auto px-5 py-5">
+                              {isStatusOwner ? (
+                                <>
+                                  <div className="grid gap-3 sm:grid-cols-3">
+                                    <DetailStatCard
+                                      description="People who opened this status."
+                                      icon={Users}
+                                      label="Views"
+                                      value={String(activeStatusDetail.viewerCount)}
+                                    />
+                                    <DetailStatCard
+                                      description="Emoji reactions sent back to this status."
+                                      icon={Sparkles}
+                                      label="Reactions"
+                                      value={String(activeStatusDetail.reactionCount)}
+                                    />
+                                    <DetailStatCard
+                                      description="Replies mirrored into chat."
+                                      icon={Reply}
+                                      label="Replies"
+                                      value={String(activeStatusDetail.commentCount)}
+                                    />
+                                  </div>
+
+                                  {statusReactionSummary.length ? (
+                                    <section className="space-y-3">
+                                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-graphite/55">Reactions</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {statusReactionSummary.map((reaction) => (
+                                          <ReactionSummaryChip
+                                            inverted={false}
+                                            key={`status-activity-${reaction.emoji}`}
+                                            mine={reaction.mine}
+                                            onClick={() => undefined}
+                                            reaction={reaction}
+                                          />
+                                        ))}
+                                      </div>
+                                    </section>
+                                  ) : (
+                                    <EmptyFeature label="Reactions" text="No one has reacted yet. When they do, you will see the breakdown here." />
+                                  )}
+
+                                  {activeStatusDetail.comments.length ? (
+                                    <section className="space-y-3">
+                                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-graphite/55">Replies</p>
+                                      <div className="space-y-3">
+                                        {activeStatusDetail.comments.map((comment) => (
+                                          <div className="rounded-[24px] border border-charcoal/8 bg-white/82 px-4 py-4" key={comment.id}>
+                                            <div className="flex items-center gap-3">
+                                              {avatarBadge(comment.user.displayName, comment.user.avatarUrl, "h-10 w-10")}
+                                              <div className="min-w-0">
+                                                <p className="truncate text-sm font-semibold text-charcoal">{comment.user.displayName}</p>
+                                                <p className="truncate text-xs text-graphite/58">
+                                                  {formatUserTag(comment.user)} {" - "} {formatMessageTime(comment.createdAt)}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <p className="mt-3 text-sm leading-7 text-graphite/74">{comment.body}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </section>
+                                  ) : (
+                                    <EmptyFeature label="Replies" text="Replies will appear here after they are mirrored into chat." />
+                                  )}
+
+                                  {activeStatusDetail.viewers.length ? (
+                                    <section className="space-y-3">
+                                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-graphite/55">Viewed by</p>
+                                      <div className="space-y-3">
+                                        {activeStatusDetail.viewers.map((view) => (
+                                          <div className="flex items-center gap-3 rounded-[24px] border border-charcoal/8 bg-white/82 px-4 py-3" key={view.id}>
+                                            {avatarBadge(view.viewer.displayName, view.viewer.avatarUrl, "h-10 w-10")}
+                                            <div className="min-w-0">
+                                              <p className="truncate text-sm font-semibold text-charcoal">{view.viewer.displayName}</p>
+                                              <p className="truncate text-xs text-graphite/58">
+                                                {formatUserTag(view.viewer)} {" - "} {formatMessageTime(view.viewedAt)}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </section>
+                                  ) : (
+                                    <EmptyFeature label="Viewed by" text="Views will appear here quietly as people open the status." />
+                                  )}
+
+                                  <section className="flex flex-wrap gap-2">
+                                    <button
+                                      className="rounded-full bg-charcoal px-4 py-2.5 text-xs font-semibold text-cloud transition hover:bg-black"
+                                      onClick={() => {
+                                        void handleDeleteCurrentStatus().catch(() => undefined);
+                                      }}
+                                      type="button"
+                                    >
+                                      Remove status
+                                    </button>
+                                  </section>
+                                </>
+                              ) : null}
+
+                              {statusModerationAccess ? (
+                                <section className="space-y-3">
+                                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-graphite/55">Moderation actions</p>
+                                  <div className="rounded-[28px] border border-charcoal/8 bg-white/82 p-4">
+                                    <p className="text-sm leading-7 text-graphite/72">
+                                      Keep live lane controls here so the public viewer stays focused on the story.
+                                    </p>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                      <button
+                                        className="rounded-full border border-charcoal/10 bg-charcoal px-4 py-2.5 text-xs font-semibold text-cloud transition hover:bg-black"
+                                        onClick={() => {
+                                          void handleModerateCurrentStatus({
+                                            remove: !Boolean(activeStatusDetail.removedAt),
+                                            removedReason: activeStatusDetail.removedAt ? undefined : "Taken down by moderation"
+                                          }).catch(() => undefined);
+                                        }}
+                                        type="button"
+                                      >
+                                        {activeStatusDetail.removedAt ? "Restore status" : "Bring down status"}
+                                      </button>
+                                      <button
+                                        className="rounded-full border border-charcoal/10 bg-white px-4 py-2.5 text-xs font-semibold text-charcoal transition hover:bg-[#f5eee4]"
+                                        onClick={() => {
+                                          void handleModerateCurrentStatus({ expiresInHours: 12 }).catch(() => undefined);
+                                        }}
+                                        type="button"
+                                      >
+                                        Set 12h
+                                      </button>
+                                      <button
+                                        className="rounded-full border border-charcoal/10 bg-white px-4 py-2.5 text-xs font-semibold text-charcoal transition hover:bg-[#f5eee4]"
+                                        onClick={() => {
+                                          void handleModerateCurrentStatus({ expiresInHours: 48 }).catch(() => undefined);
+                                        }}
+                                        type="button"
+                                      >
+                                        Set 48h
+                                      </button>
+                                    </div>
+                                  </div>
+                                </section>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <div className="relative z-10 w-full max-w-[760px] rounded-[34px] border border-white/12 bg-white/10 p-6 text-white shadow-[0_28px_70px_rgba(0,0,0,0.26)] backdrop-blur sm:p-8">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="max-w-xl">
+                          <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/58">Status lane</p>
+                          <h2 className="mt-3 text-[2rem] font-semibold leading-tight text-white">Open one story at a time.</h2>
+                          <p className="mt-3 text-sm leading-7 text-white/76">
+                            Keep the viewer focused. Pick a live update below or publish your own without turning the whole page into a scoreboard.
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-black/22 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-black/34"
+                            onClick={handleStatusBack}
+                            type="button"
+                          >
+                            <ArrowRight className="h-4 w-4 rotate-180" />
+                            Back to chats
+                          </button>
+                          <button
+                            className="rounded-full bg-white px-4 py-3 text-sm font-semibold text-charcoal transition hover:bg-[#f8f5ef]"
+                            onClick={() => openStatusComposer("TEXT")}
+                            type="button"
+                          >
+                            Post text status
+                          </button>
+                        </div>
+                      </div>
+
+                      {statusThreads.length ? (
+                        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                          {statusThreads.slice(0, 6).map((thread) => (
+                            <button
+                              className="flex items-center gap-3 rounded-[24px] border border-white/14 bg-black/18 px-4 py-4 text-left transition hover:bg-black/28"
+                              key={thread.owner.id}
+                              onClick={() => selectStatusThread(thread.owner.id, thread.items[0]?.id)}
+                              type="button"
+                            >
+                              {avatarBadge(thread.owner.displayName, thread.owner.avatarUrl, "h-12 w-12")}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-white">
+                                  {thread.owner.id === viewer.id ? "Your lane" : thread.owner.displayName}
+                                </p>
+                                <p className="truncate text-xs text-white/62">
+                                  {thread.items.length} live {thread.items.length === 1 ? "moment" : "moments"} {" - "}{" "}
+                                  {formatMessageTime(thread.latestCreatedAt ?? thread.items[0]?.createdAt ?? new Date().toISOString())}
+                                </p>
+                              </div>
+                              {thread.hasUnseen ? (
+                                <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-charcoal">
+                                  {thread.unseenCount}
+                                </span>
+                              ) : null}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-6">
+                          <EmptyFeature
+                            label="No live statuses"
+                            text="Post a text, photo, or video update and it will appear here in a quieter focused viewer."
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : false ? (
+                <>{/* Legacy status viewer kept here temporarily while the focused overlay ships.
                   <div className="flex min-h-[720px] flex-col overflow-hidden rounded-[36px] border border-charcoal/10 bg-white shadow-[0_28px_60px_rgba(24,18,15,0.1)]">
                     {activeStatusDetail ? (
                       <>
@@ -6522,7 +7053,7 @@ function CompactChatWorkspace({
                       </section>
                     ) : null}
                   </aside>
-                </div>
+                */}</>
               ) : !activeConversation ? (
                 <div className="grid flex-1 place-items-center py-10">
                 <div className="max-w-md rounded-[28px] bg-white/84 px-8 py-10 text-center shadow-[0_20px_50px_rgba(24,18,15,0.08)]">
