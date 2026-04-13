@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, Merienda } from "next/font/google";
+import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,9 +12,9 @@ const bodyFont = Manrope({
   variable: "--font-body"
 });
 
-const displayFont = Merienda({
+const displayFont = Fraunces({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["600", "700"],
   variable: "--font-display"
 });
 

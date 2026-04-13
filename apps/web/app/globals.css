@@ -47,8 +47,8 @@ button {
 }
 
 .font-display {
-  font-family: var(--font-display), cursive;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display), serif;
+  letter-spacing: -0.03em;
 }
 
 ::selection {
