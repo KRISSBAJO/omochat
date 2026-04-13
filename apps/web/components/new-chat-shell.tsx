@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Archive,
@@ -4879,6 +4879,57 @@ function CompactChatWorkspace({
     return () => window.clearTimeout(handle);
   }, [detailsPanelView, isDetailsPanelOpen, isGroupThread]);
 
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target;
+
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      if (!target.closest("[data-conversation-menu-root]") && !target.closest("[data-conversation-menu-trigger]")) {
+        setIsConversationMenuOpen(false);
+      }
+
+      if (!target.closest("[data-composer-tools-root]")) {
+        setIsComposerToolsOpen(false);
+      }
+
+      if (!target.closest("[data-emoji-picker-root]")) {
+        setIsEmojiPickerOpen(false);
+      }
+
+      if (!target.closest("[data-gif-picker-root]")) {
+        setIsGifPickerOpen(false);
+      }
+
+      if (!target.closest("[data-message-menu-root]") && !target.closest("[data-message-menu-trigger]")) {
+        setOpenMessageMenuId(null);
+      }
+
+      if (!target.closest("[data-reaction-picker-root]") && !target.closest("[data-reaction-picker-trigger]")) {
+        setOpenReactionPickerId(null);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
+
+  function handleComposerKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (!draft.trim() && !editingMessageId) {
+      return;
+    }
+
+    event.currentTarget.form?.requestSubmit();
+  }
+
   function getModerationDraft(report: ModerationReport) {
     return (
       moderationDrafts[report.id] ?? {
@@ -6017,6 +6068,7 @@ function CompactChatWorkspace({
                       <Video className="h-4 w-4" />
                     </button>
                     <button
+                      data-conversation-menu-trigger
                       className="grid h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal"
                       onClick={() => setIsConversationMenuOpen(!isConversationMenuOpen)}
                       type="button"
@@ -6026,7 +6078,10 @@ function CompactChatWorkspace({
                   </>
                 )}
                 {!isViewingStatuses && isConversationMenuOpen ? (
-                  <div className="absolute right-0 top-12 z-20 w-[240px] rounded-[24px] border border-charcoal/10 bg-white p-2 shadow-[0_20px_40px_rgba(24,18,15,0.12)]">
+                  <div
+                    className="absolute right-0 top-12 z-20 w-[240px] rounded-[24px] border border-charcoal/10 bg-white p-2 shadow-[0_20px_40px_rgba(24,18,15,0.12)]"
+                    data-conversation-menu-root
+                  >
                     {activeConversation ? (
                       <>
                         <button
@@ -6605,6 +6660,7 @@ function CompactChatWorkspace({
                                     </button>
                                   ))}
                                   <button
+                                    data-reaction-picker-trigger
                                     aria-label="More reactions"
                                     className="grid h-8 w-8 place-items-center rounded-full text-graphite/72 transition hover:bg-[#f5efe5] hover:text-charcoal"
                                     onClick={() => {
@@ -6616,6 +6672,7 @@ function CompactChatWorkspace({
                                     <Plus className="h-4 w-4" />
                                   </button>
                                   <button
+                                    data-message-menu-trigger
                                     aria-label="Message actions"
                                     className="grid h-8 w-8 place-items-center rounded-full text-graphite/72 transition hover:bg-[#f5efe5] hover:text-charcoal"
                                     onClick={() => {
@@ -6634,6 +6691,7 @@ function CompactChatWorkspace({
                                   className={`absolute -top-16 z-20 flex items-center gap-1 rounded-full border border-charcoal/10 bg-white px-2 py-2 shadow-[0_12px_30px_rgba(23,22,19,0.1)] ${
                                     mine ? "right-3" : "left-3"
                                   }`}
+                                  data-reaction-picker-root
                                 >
                                   {reactionCatalog.map((reaction) => (
                                     <ReactionToggleButton
@@ -6654,6 +6712,7 @@ function CompactChatWorkspace({
                                   className={`absolute top-11 z-20 w-52 rounded-[24px] border border-charcoal/10 bg-white p-2 shadow-[0_20px_40px_rgba(24,18,15,0.12)] ${
                                     mine ? "right-0" : "left-0"
                                   }`}
+                                  data-message-menu-root
                                 >
                                   <button
                                     className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left text-sm font-semibold text-charcoal transition hover:bg-[#f5efe5]"
@@ -6852,7 +6911,10 @@ function CompactChatWorkspace({
               )}
 
               {isGifPickerOpen ? (
-                <div className="absolute inset-x-0 bottom-[calc(100%+12px)] z-30 overflow-hidden rounded-[28px] border border-charcoal/10 bg-white p-4 shadow-[0_24px_60px_rgba(24,18,15,0.12)]">
+                <div
+                  className="absolute inset-x-0 bottom-[calc(100%+12px)] z-30 overflow-hidden rounded-[28px] border border-charcoal/10 bg-white p-4 shadow-[0_24px_60px_rgba(24,18,15,0.12)]"
+                  data-gif-picker-root
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.22em] text-graphite/55">GIF lane</p>
@@ -6959,7 +7021,7 @@ function CompactChatWorkspace({
                   ref={cameraInputRef}
                   type="file"
                 />
-                <div className="relative">
+                <div className="relative" data-composer-tools-root>
                   <button
                     className={`grid h-10 w-10 place-items-center rounded-full text-graphite/58 transition hover:bg-[#f3ede1] hover:text-charcoal disabled:opacity-50 ${
                       isComposerToolsOpen ? "bg-[#f3ede1] text-charcoal" : ""
@@ -6968,6 +7030,9 @@ function CompactChatWorkspace({
                     onClick={() => {
                       setIsComposerToolsOpen(!isComposerToolsOpen);
                       setIsEmojiPickerOpen(false);
+                      setIsGifPickerOpen(false);
+                      setOpenMessageMenuId(null);
+                      setOpenReactionPickerId(null);
                     }}
                     type="button"
                   >
@@ -7055,6 +7120,7 @@ function CompactChatWorkspace({
                       }
                       typingTimeoutRef.current = window.setTimeout(() => emitTyping(false), 1200);
                     }}
+                    onKeyDown={handleComposerKeyDown}
                     placeholder={
                       !activeConversation
                         ? "Choose a chat first"
@@ -7070,19 +7136,37 @@ function CompactChatWorkspace({
                     value={draft}
                   />
                 </label>
-                <button
-                  className={`grid h-10 w-10 place-items-center rounded-full text-graphite/58 transition hover:bg-[#f3ede1] hover:text-charcoal disabled:opacity-50 ${
-                    isEmojiPickerOpen ? "bg-[#f3ede1] text-charcoal" : ""
-                  }`}
-                  disabled={!activeConversation || isDirectConversationBlocked}
-                  onClick={() => {
-                    setIsEmojiPickerOpen(!isEmojiPickerOpen);
-                    setIsGifPickerOpen(false);
-                  }}
-                  type="button"
-                >
-                  <SmilePlus className="h-4 w-4" />
-                </button>
+                <div className="relative" data-emoji-picker-root>
+                  <button
+                    className={`grid h-10 w-10 place-items-center rounded-full text-graphite/58 transition hover:bg-[#f3ede1] hover:text-charcoal disabled:opacity-50 ${
+                      isEmojiPickerOpen ? "bg-[#f3ede1] text-charcoal" : ""
+                    }`}
+                    disabled={!activeConversation || isDirectConversationBlocked}
+                    onClick={() => {
+                      setIsEmojiPickerOpen(!isEmojiPickerOpen);
+                      setIsGifPickerOpen(false);
+                      setIsComposerToolsOpen(false);
+                      setOpenMessageMenuId(null);
+                      setOpenReactionPickerId(null);
+                    }}
+                    type="button"
+                  >
+                    <SmilePlus className="h-4 w-4" />
+                  </button>
+                  {isEmojiPickerOpen ? (
+                    <div className="absolute bottom-[calc(100%+12px)] right-0 z-20 overflow-hidden rounded-[28px] border border-charcoal/10 bg-white shadow-[0_24px_60px_rgba(24,18,15,0.14)]">
+                      <EmojiPicker
+                        lazyLoadEmojis
+                        onEmojiClick={(emojiData: { emoji: string }) => {
+                          setDraft(`${draft}${emojiData.emoji}`);
+                        }}
+                        previewConfig={{ showPreview: false }}
+                        searchDisabled={false}
+                        width={320}
+                      />
+                    </div>
+                  ) : null}
+                </div>
                 <button
                   className="grid h-11 w-11 place-items-center rounded-full bg-charcoal text-cloud transition hover:bg-black disabled:opacity-50"
                   disabled={!activeConversation || isDirectConversationBlocked || (!draft.trim() && !editingMessageId)}
@@ -7090,20 +7174,6 @@ function CompactChatWorkspace({
                 >
                   {editingMessageId ? <PencilLine className="h-4 w-4" /> : <SendHorizontal className="h-4 w-4" />}
                 </button>
-
-                {isEmojiPickerOpen ? (
-                  <div className="absolute bottom-[calc(100%+12px)] right-4 z-20 overflow-hidden rounded-[28px] border border-charcoal/10 bg-white shadow-[0_24px_60px_rgba(24,18,15,0.14)]">
-                    <EmojiPicker
-                      lazyLoadEmojis
-                      onEmojiClick={(emojiData: { emoji: string }) => {
-                        setDraft(`${draft}${emojiData.emoji}`);
-                      }}
-                      previewConfig={{ showPreview: false }}
-                      searchDisabled={false}
-                      width={320}
-                    />
-                  </div>
-                ) : null}
               </div>
             </div>
             </form>
