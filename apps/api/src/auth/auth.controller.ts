@@ -14,6 +14,7 @@ import { RegisterDto } from "./dto/register.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { StartPhoneVerificationDto } from "./dto/start-phone-verification.dto";
 import { VerifyPhoneDto } from "./dto/verify-phone.dto";
+import { getRefreshCookieOptions } from "../config/runtime";
 
 const authResponseExample = {
   tokenType: "Bearer",
@@ -77,7 +78,7 @@ export class AuthController {
   @ApiOkResponse({ schema: { example: { ok: true } } })
   async logout(@Body() body: LogoutDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
     const token = body.refreshToken ?? request.cookies?.[REFRESH_TOKEN_COOKIE];
-    response.clearCookie(REFRESH_TOKEN_COOKIE);
+    response.clearCookie(REFRESH_TOKEN_COOKIE, getRefreshCookieOptions());
     return this.auth.logout(token);
   }
 
@@ -92,7 +93,7 @@ export class AuthController {
   @HttpCode(200)
   @ApiOkResponse({ schema: { example: { ok: true } } })
   resetPassword(@Body() body: ResetPasswordDto, @Res({ passthrough: true }) response: Response) {
-    response.clearCookie(REFRESH_TOKEN_COOKIE);
+    response.clearCookie(REFRESH_TOKEN_COOKIE, getRefreshCookieOptions());
     return this.auth.resetPassword(body);
   }
 
@@ -113,12 +114,6 @@ export class AuthController {
   }
 
   private setRefreshCookie(response: Response, refreshToken: string, expires: Date) {
-    response.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      expires,
-      path: "/auth"
-    });
+    response.cookie(REFRESH_TOKEN_COOKIE, refreshToken, getRefreshCookieOptions(expires));
   }
 }

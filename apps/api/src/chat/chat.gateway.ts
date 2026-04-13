@@ -14,6 +14,7 @@ import { Server, Socket } from "socket.io";
 import { resolveUserAccess } from "../access/access.utils";
 import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { CallsService } from "../calls/calls.service";
+import { getAllowedOrigins } from "../config/runtime";
 import { ConversationsService } from "../conversations/conversations.service";
 import { CreateMessageDto } from "../messages/dto/create-message.dto";
 import { MessagesService } from "../messages/messages.service";
@@ -30,16 +31,7 @@ type AccessTokenPayload = AuthenticatedUser & {
 
 @WebSocketGateway({
   cors: {
-    origin: [
-      process.env.WEB_ORIGIN,
-      process.env.FRONTEND_URL,
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:3002",
-      "http://localhost:3003",
-      "http://localhost:3004",
-      "http://localhost:3005"
-    ].filter(Boolean),
+    origin: getAllowedOrigins(),
     credentials: true
   }
 })

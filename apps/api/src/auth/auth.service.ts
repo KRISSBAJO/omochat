@@ -6,6 +6,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { resolveUserAccess } from "../access/access.utils";
 import { MailService } from "../mail/mail.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { getWebAppOrigin } from "../config/runtime";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
@@ -258,7 +259,7 @@ export class AuthService {
       }
     });
 
-    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:3001";
+    const frontendUrl = getWebAppOrigin();
     const resetUrl = `${frontendUrl}/?resetToken=${encodeURIComponent(token)}`;
     await this.mail.sendPasswordResetEmail(user.email, resetUrl);
 

@@ -75,3 +75,13 @@ Initial auth and user endpoints:
 - `GET /users/me`
 - `PATCH /users/me`
 - `GET /users/search?q=mira`
+
+## Deployment
+
+The repo is prepared for:
+
+- `apps/api` on Render
+- `apps/web` on Amplify
+- PostgreSQL on Render Postgres
+
+See `docs/deployment.md` for the full setup, required environment variables, and the recommended same-domain browser setup (`app.example.com` + `api.example.com`).

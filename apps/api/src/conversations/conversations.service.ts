@@ -3,6 +3,7 @@ import { ConversationType, ParticipantRole, Prisma } from "@omochat/db";
 import { randomBytes } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { SafetyService } from "../safety/safety.service";
+import { getWebAppOrigin } from "../config/runtime";
 import { AuthenticatedUser } from "../auth/types/authenticated-user";
 import { AddConversationMembersDto } from "./dto/add-conversation-members.dto";
 import { CreateConversationDto } from "./dto/create-conversation.dto";
@@ -374,11 +375,9 @@ export class ConversationsService {
       });
     }
 
-    const appOrigin = (process.env.WEB_ORIGIN ?? process.env.FRONTEND_URL ?? "http://localhost:3000").replace(/\/$/, "");
-
     return {
       code: inviteCode,
-      inviteUrl: `${appOrigin}/?invite=${inviteCode}`,
+      inviteUrl: `${getWebAppOrigin()}/?invite=${inviteCode}`,
       expiresAt: inviteCodeExpiresAt?.toISOString() ?? null
     };
   }
