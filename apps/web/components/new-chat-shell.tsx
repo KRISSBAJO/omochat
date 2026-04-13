@@ -5959,11 +5959,11 @@ function CompactChatWorkspace({
         </aside>
 
         <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#efe6d7]">
-          <header className="shrink-0 border-b border-charcoal/10 bg-white/92 px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-3">
+          <header className="sticky top-0 z-20 shrink-0 border-b border-charcoal/10 bg-white/90 px-3 py-2.5 backdrop-blur sm:px-4 sm:py-3 lg:static lg:bg-white/92 lg:backdrop-blur-0">
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
+              <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                 <button
-                  className="grid h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-charcoal lg:hidden"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-white text-charcoal lg:hidden"
                   onClick={() => setIsSidebarOpen(true)}
                   type="button"
                 >
@@ -5973,11 +5973,15 @@ function CompactChatWorkspace({
                   ? avatarBadge(
                       activeStatusThread?.owner.displayName ?? viewer.displayName,
                       activeStatusThread?.owner.avatarUrl ?? viewer.avatarUrl,
-                      "h-11 w-11"
+                      "h-10 w-10 sm:h-11 sm:w-11"
                     )
-                  : avatarBadge(activeRoomLabel ?? viewer.displayName, activePartner?.avatarUrl ?? viewer.avatarUrl, "h-11 w-11")}
+                  : avatarBadge(
+                      activeRoomLabel ?? viewer.displayName,
+                      activePartner?.avatarUrl ?? viewer.avatarUrl,
+                      "h-10 w-10 sm:h-11 sm:w-11"
+                    )}
                 <div className="min-w-0">
-                  <p className="truncate text-[15px] font-semibold text-charcoal">
+                  <p className="truncate text-[14px] font-semibold text-charcoal sm:text-[15px]">
                     {isViewingStatuses
                       ? activeStatusThread
                         ? activeStatusThread.owner.id === viewer.id
@@ -5986,7 +5990,7 @@ function CompactChatWorkspace({
                         : "Status updates"
                       : activeRoomLabel ?? "Choose a chat"}
                   </p>
-                  <p className="truncate text-xs text-graphite/60">
+                  <p className="truncate text-[11px] text-graphite/60 sm:text-xs">
                     {isViewingStatuses
                       ? activeStatusDetail
                         ? `${activeStatusIndex + 1} of ${activeStatusThread?.items.length ?? 1} • expires ${statusExpiresLabel}`
@@ -5999,7 +6003,7 @@ function CompactChatWorkspace({
                   </p>
                 </div>
               </div>
-              <div className="relative flex items-center gap-2">
+              <div className="relative flex items-center gap-1.5 sm:gap-2">
                 <span className="hidden rounded-full bg-[#e9d08f] px-3 py-1.5 text-xs font-semibold text-charcoal sm:inline-flex sm:items-center sm:gap-2">
                   <Sparkles className="h-3.5 w-3.5" />
                   {currentIdentity}
@@ -6007,7 +6011,7 @@ function CompactChatWorkspace({
                 {isViewingStatuses ? (
                   <>
                     <button
-                      className="rounded-full border border-charcoal/10 bg-white px-4 py-2 text-xs font-semibold text-charcoal transition hover:border-charcoal/20 disabled:opacity-50"
+                      className="rounded-full border border-charcoal/10 bg-white px-3 py-2 text-[11px] font-semibold text-charcoal transition hover:border-charcoal/20 disabled:opacity-50 sm:px-4 sm:text-xs"
                       disabled={!activeStatusThread}
                       onClick={() => stepStatus("previous")}
                       type="button"
@@ -6015,7 +6019,7 @@ function CompactChatWorkspace({
                       Prev
                     </button>
                     <button
-                      className="rounded-full border border-charcoal/10 bg-white px-4 py-2 text-xs font-semibold text-charcoal transition hover:border-charcoal/20 disabled:opacity-50"
+                      className="rounded-full border border-charcoal/10 bg-white px-3 py-2 text-[11px] font-semibold text-charcoal transition hover:border-charcoal/20 disabled:opacity-50 sm:px-4 sm:text-xs"
                       disabled={!activeStatusThread}
                       onClick={() => stepStatus("next")}
                       type="button"
@@ -6023,7 +6027,7 @@ function CompactChatWorkspace({
                       Next
                     </button>
                     <button
-                      className="grid h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal"
+                      className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal sm:h-10 sm:w-10"
                       onClick={() => openStatusComposer("TEXT")}
                       type="button"
                     >
@@ -6033,7 +6037,7 @@ function CompactChatWorkspace({
                 ) : (
                   <>
                     <button
-                      className="grid h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal disabled:opacity-50"
+                      className="hidden h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal disabled:opacity-50 sm:grid sm:h-10 sm:w-10"
                       disabled={!activeConversation}
                       onClick={() => {
                         if (isDetailsPanelOpen) {
@@ -6048,7 +6052,7 @@ function CompactChatWorkspace({
                       {isDetailsPanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
                     </button>
                     <button
-                      className="grid h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal disabled:opacity-50"
+                      className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal disabled:opacity-50 sm:h-10 sm:w-10"
                       disabled={!activeConversation}
                       onClick={() => {
                         void handleStartCall("VOICE").catch(() => undefined);
@@ -6058,7 +6062,7 @@ function CompactChatWorkspace({
                       <Phone className="h-4 w-4" />
                     </button>
                     <button
-                      className="grid h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal disabled:opacity-50"
+                      className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal disabled:opacity-50 sm:h-10 sm:w-10"
                       disabled={!activeConversation}
                       onClick={() => {
                         void handleStartCall("VIDEO").catch(() => undefined);
@@ -6069,7 +6073,7 @@ function CompactChatWorkspace({
                     </button>
                     <button
                       data-conversation-menu-trigger
-                      className="grid h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal"
+                      className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal sm:h-10 sm:w-10"
                       onClick={() => setIsConversationMenuOpen(!isConversationMenuOpen)}
                       type="button"
                     >
@@ -6079,7 +6083,7 @@ function CompactChatWorkspace({
                 )}
                 {!isViewingStatuses && isConversationMenuOpen ? (
                   <div
-                    className="absolute right-0 top-12 z-20 w-[240px] rounded-[24px] border border-charcoal/10 bg-white p-2 shadow-[0_20px_40px_rgba(24,18,15,0.12)]"
+                    className="absolute right-0 top-11 z-20 w-[220px] rounded-[22px] border border-charcoal/10 bg-white p-2 shadow-[0_20px_40px_rgba(24,18,15,0.12)] sm:top-12 sm:w-[240px] sm:rounded-[24px]"
                     data-conversation-menu-root
                   >
                     {activeConversation ? (
@@ -6219,7 +6223,7 @@ function CompactChatWorkspace({
             </div>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-[#efe6d7] px-3 py-6 [background-image:radial-gradient(circle_at_1px_1px,rgba(120,98,68,0.08)_1px,transparent_0)] [background-size:24px_24px] sm:px-6 xl:px-8">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-[#efe6d7] px-2 py-3 [background-image:radial-gradient(circle_at_1px_1px,rgba(120,98,68,0.08)_1px,transparent_0)] [background-size:18px_18px] sm:px-6 sm:py-6 sm:[background-size:24px_24px] xl:px-8">
             <div className="mx-auto flex min-h-full w-full max-w-[1280px] flex-col">
               {isViewingStatuses ? (
                 <div className="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -6628,15 +6632,15 @@ function CompactChatWorkspace({
                     </div>
                   ) : null}
 
-                  <div className="mt-6 space-y-4">
+                  <div className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
                     {messages.map((message) => {
                       const mine = message.sender?.id === viewer.id;
                       const seenText = seenByLine(message, viewer.id);
 
                       return (
                         <article className={`flex ${mine ? "justify-end" : "justify-start"}`} key={message.id}>
-                          <div className={`group flex max-w-[94%] items-end gap-2 md:max-w-[74%] xl:max-w-[66%] ${mine ? "flex-row-reverse" : ""}`}>
-                            {!mine ? avatarBadge(message.sender?.displayName ?? "Unknown", message.sender?.avatarUrl ?? null, "h-8 w-8") : null}
+                          <div className={`group flex max-w-[90%] items-end gap-1.5 sm:max-w-[94%] sm:gap-2 md:max-w-[74%] xl:max-w-[66%] ${mine ? "flex-row-reverse" : ""}`}>
+                            {!mine ? avatarBadge(message.sender?.displayName ?? "Unknown", message.sender?.avatarUrl ?? null, "h-7 w-7 sm:h-8 sm:w-8") : null}
                             <div className="relative">
                               {!message.deletedAt ? (
                                 <div
@@ -6811,20 +6815,20 @@ function CompactChatWorkspace({
                               ) : null}
 
                               <div
-                                className={`rounded-[22px] border px-4 py-3 shadow-[0_10px_24px_rgba(24,18,15,0.06)] ${
+                                className={`rounded-[20px] border px-3.5 py-2.5 shadow-[0_10px_24px_rgba(24,18,15,0.06)] sm:rounded-[22px] sm:px-4 sm:py-3 ${
                                   mine
                                     ? "rounded-br-md border-[#cfe8be] bg-[#d9fdd3] text-charcoal"
                                     : "rounded-bl-md border-white/80 bg-white text-charcoal"
                                 }`}
                               >
                               {!mine ? (
-                                <p className="mb-1 text-[11px] font-semibold text-graphite/55">
+                                <p className="mb-1 text-[10px] font-semibold text-graphite/55 sm:text-[11px]">
                                   {message.sender?.displayName ?? "Unknown"}
                                 </p>
                               ) : null}
                               {message.parent ? (
-                                <button
-                                  className="mb-3 block w-full rounded-[18px] border border-charcoal/10 bg-white/60 px-3 py-2 text-left text-xs text-graphite/72"
+                                  <button
+                                    className="mb-2.5 block w-full rounded-[16px] border border-charcoal/10 bg-white/60 px-3 py-2 text-left text-[11px] text-graphite/72 sm:mb-3 sm:rounded-[18px] sm:text-xs"
                                   onClick={() => setReplyTarget(message.parent as ChatMessage)}
                                   type="button"
                                 >
@@ -6839,9 +6843,9 @@ function CompactChatWorkspace({
                               ) : null}
                               {message.media.length > 0 ? <MessageMediaGrid media={message.media} /> : null}
                               {message.deletedAt ? (
-                                <p className="break-words text-[14px] italic leading-6 text-graphite/56">Message removed</p>
+                                <p className="break-words text-[13px] italic leading-5 text-graphite/56 sm:text-[14px] sm:leading-6">Message removed</p>
                               ) : message.body ? (
-                                <p className="break-words text-[15px] leading-6">{message.body}</p>
+                                <p className="break-words text-[14px] leading-[1.45] sm:text-[15px] sm:leading-6">{message.body}</p>
                               ) : null}
 
                               {message.reactions.length > 0 ? (
@@ -6860,11 +6864,11 @@ function CompactChatWorkspace({
                                 </div>
                               ) : null}
 
-                              <div className="mt-3 flex items-end justify-end gap-3">
+                              <div className="mt-2.5 flex items-end justify-end gap-3 sm:mt-3">
                                 <div className="text-right">
-                                  <p className="text-[11px] font-medium text-graphite/56">{formatMessageTime(message.createdAt)}</p>
-                                  {message.editedAt && !message.deletedAt ? <p className="mt-0.5 text-[10px] font-medium text-graphite/48">Edited</p> : null}
-                                  {mine && seenText ? <p className="mt-0.5 text-[10px] font-medium text-graphite/48">{seenText}</p> : null}
+                                  <p className="text-[10px] font-medium text-graphite/56 sm:text-[11px]">{formatMessageTime(message.createdAt)}</p>
+                                  {message.editedAt && !message.deletedAt ? <p className="mt-0.5 text-[9px] font-medium text-graphite/48 sm:text-[10px]">Edited</p> : null}
+                                  {mine && seenText ? <p className="mt-0.5 text-[9px] font-medium text-graphite/48 sm:text-[10px]">{seenText}</p> : null}
                                 </div>
                               </div>
                               </div>
@@ -6880,10 +6884,13 @@ function CompactChatWorkspace({
           </div>
 
           {!isViewingStatuses ? (
-            <form className="relative shrink-0 border-t border-charcoal/10 bg-[#f8f5ef] px-4 py-4" onSubmit={handleSendMessage}>
+            <form
+              className="relative shrink-0 border-t border-charcoal/10 bg-[#f8f5ef]/98 px-2 py-2 pb-[calc(0.55rem+env(safe-area-inset-bottom))] backdrop-blur sm:bg-[#f8f5ef] sm:px-4 sm:py-4 sm:pb-4"
+              onSubmit={handleSendMessage}
+            >
             <div className="relative mx-auto w-full max-w-[1280px]">
               {(replyTarget || editingMessageId) && (
-                <div className="mb-3 flex items-center justify-between gap-3 rounded-[24px] border border-charcoal/10 bg-white px-4 py-3 text-sm">
+                <div className="mb-2.5 flex items-center justify-between gap-3 rounded-[20px] border border-charcoal/10 bg-white px-3 py-2.5 text-[13px] sm:mb-3 sm:rounded-[24px] sm:px-4 sm:py-3 sm:text-sm">
                   <div className="min-w-0">
                     <p className="font-semibold text-charcoal">
                       {editingMessageId ? "Editing message" : `Replying to ${replyTarget?.sender?.displayName ?? "message"}`}
@@ -6912,7 +6919,7 @@ function CompactChatWorkspace({
 
               {isGifPickerOpen ? (
                 <div
-                  className="absolute inset-x-0 bottom-[calc(100%+12px)] z-30 overflow-hidden rounded-[28px] border border-charcoal/10 bg-white p-4 shadow-[0_24px_60px_rgba(24,18,15,0.12)]"
+                  className="absolute inset-x-0 bottom-[calc(100%+8px)] z-30 overflow-hidden rounded-[24px] border border-charcoal/10 bg-white p-3 shadow-[0_24px_60px_rgba(24,18,15,0.12)] sm:bottom-[calc(100%+12px)] sm:rounded-[28px] sm:p-4"
                   data-gif-picker-root
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -6971,7 +6978,7 @@ function CompactChatWorkspace({
                 </div>
               ) : null}
 
-              <div className="relative z-10 flex w-full items-center gap-3 rounded-[30px] border border-charcoal/10 bg-white px-3 py-2 shadow-[0_12px_30px_rgba(24,18,15,0.05)]">
+              <div className="relative z-10 flex w-full items-center gap-2 rounded-[24px] border border-charcoal/10 bg-white px-2.5 py-2 shadow-[0_12px_30px_rgba(24,18,15,0.05)] sm:gap-3 sm:rounded-[30px] sm:px-3">
                 <input
                   className="hidden"
                   multiple
@@ -7023,7 +7030,7 @@ function CompactChatWorkspace({
                 />
                 <div className="relative" data-composer-tools-root>
                   <button
-                    className={`grid h-10 w-10 place-items-center rounded-full text-graphite/58 transition hover:bg-[#f3ede1] hover:text-charcoal disabled:opacity-50 ${
+                    className={`grid h-9 w-9 place-items-center rounded-full text-graphite/58 transition hover:bg-[#f3ede1] hover:text-charcoal disabled:opacity-50 sm:h-10 sm:w-10 ${
                       isComposerToolsOpen ? "bg-[#f3ede1] text-charcoal" : ""
                     }`}
                     disabled={!activeConversation || isDirectConversationBlocked || isUploadBusy}
@@ -7039,7 +7046,7 @@ function CompactChatWorkspace({
                     {isUploadBusy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                   </button>
                   {isComposerToolsOpen ? (
-                    <div className="absolute bottom-[calc(100%+12px)] left-0 z-20 w-56 rounded-[24px] border border-charcoal/10 bg-white p-2 shadow-[0_20px_40px_rgba(24,18,15,0.12)]">
+                    <div className="absolute bottom-[calc(100%+8px)] left-0 z-20 w-52 rounded-[22px] border border-charcoal/10 bg-white p-2 shadow-[0_20px_40px_rgba(24,18,15,0.12)] sm:bottom-[calc(100%+12px)] sm:w-56 sm:rounded-[24px]">
                       <button
                         className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left text-sm font-semibold text-charcoal transition hover:bg-[#f5efe5]"
                         onClick={() => {
@@ -7103,7 +7110,7 @@ function CompactChatWorkspace({
                   <span className="sr-only">Message</span>
                   <textarea
                     aria-label="Message"
-                    className="h-11 max-h-32 w-full resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-graphite/50"
+                    className="h-10 max-h-32 w-full resize-none bg-transparent px-1 py-2 text-[14px] outline-none placeholder:text-graphite/50 sm:h-11 sm:px-2 sm:text-sm"
                     disabled={!activeConversation || isDirectConversationBlocked}
                     onBlur={() => emitTyping(false)}
                     onChange={(event) => {
@@ -7138,7 +7145,7 @@ function CompactChatWorkspace({
                 </label>
                 <div className="relative" data-emoji-picker-root>
                   <button
-                    className={`grid h-10 w-10 place-items-center rounded-full text-graphite/58 transition hover:bg-[#f3ede1] hover:text-charcoal disabled:opacity-50 ${
+                    className={`grid h-9 w-9 place-items-center rounded-full text-graphite/58 transition hover:bg-[#f3ede1] hover:text-charcoal disabled:opacity-50 sm:h-10 sm:w-10 ${
                       isEmojiPickerOpen ? "bg-[#f3ede1] text-charcoal" : ""
                     }`}
                     disabled={!activeConversation || isDirectConversationBlocked}
@@ -7154,7 +7161,7 @@ function CompactChatWorkspace({
                     <SmilePlus className="h-4 w-4" />
                   </button>
                   {isEmojiPickerOpen ? (
-                    <div className="absolute bottom-[calc(100%+12px)] right-0 z-20 overflow-hidden rounded-[28px] border border-charcoal/10 bg-white shadow-[0_24px_60px_rgba(24,18,15,0.14)]">
+                    <div className="absolute bottom-[calc(100%+8px)] right-0 z-20 max-w-[calc(100vw-1rem)] overflow-hidden rounded-[24px] border border-charcoal/10 bg-white shadow-[0_24px_60px_rgba(24,18,15,0.14)] sm:bottom-[calc(100%+12px)] sm:max-w-none sm:rounded-[28px]">
                       <EmojiPicker
                         lazyLoadEmojis
                         onEmojiClick={(emojiData: { emoji: string }) => {
@@ -7168,7 +7175,7 @@ function CompactChatWorkspace({
                   ) : null}
                 </div>
                 <button
-                  className="grid h-11 w-11 place-items-center rounded-full bg-charcoal text-cloud transition hover:bg-black disabled:opacity-50"
+                  className="grid h-10 w-10 place-items-center rounded-full bg-charcoal text-cloud transition hover:bg-black disabled:opacity-50 sm:h-11 sm:w-11"
                   disabled={!activeConversation || isDirectConversationBlocked || (!draft.trim() && !editingMessageId)}
                   type="submit"
                 >
