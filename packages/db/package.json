@@ -1,0 +1,21 @@
+{
+  "name": "@omochat/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "generated/client/index.js",
+  "types": "generated/client/index.d.ts",
+  "scripts": {
+    "db:generate": "node scripts/prisma-generate.cjs",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.1.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.1.0",
+    "typescript": "^5.7.2"
+  }
+}

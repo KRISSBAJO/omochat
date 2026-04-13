@@ -1,0 +1,30 @@
+{
+  "name": "omochat",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Omochat realtime chat monorepo.",
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm run dev --workspace @omochat/web",
+    "dev:api": "npm run start:dev --workspace @omochat/api",
+    "dev:api:stable": "npm run build --workspace @omochat/api && npm run start:prod --workspace @omochat/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace @omochat/db",
+    "db:migrate": "npm run db:migrate --workspace @omochat/db",
+    "db:studio": "npm run db:studio --workspace @omochat/db"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  }
+}
