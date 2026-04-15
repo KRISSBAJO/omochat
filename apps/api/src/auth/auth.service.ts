@@ -307,7 +307,7 @@ export class AuthService {
       },
       {
         secret: process.env.JWT_ACCESS_SECRET ?? "change-me-access",
-        expiresIn: Number(process.env.JWT_ACCESS_TTL_SECONDS ?? 900)
+        expiresIn: Number(process.env.JWT_ACCESS_TTL_SECONDS ?? 7200)
       }
     );
     const refreshToken = randomBytes(48).toString("base64url");

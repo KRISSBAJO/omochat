@@ -104,6 +104,7 @@ import {
   prepareAttachmentUpload,
   reportUser,
   refreshSession,
+  subscribeToSessionRefresh,
   register,
   registerPushSubscription,
   resetPassword,
@@ -503,6 +504,8 @@ export function ChatShell() {
       .catch(() => undefined)
       .finally(() => setBooting(false));
   }, []);
+
+  useEffect(() => subscribeToSessionRefresh((nextSession) => setSession(nextSession)), []);
 
   useEffect(() => {
     if (!session?.user.id) {

@@ -8,16 +8,20 @@ import {
   AdminOverview,
   AdminStatus,
   AdminUser,
+  ConversationToolRequest,
   getAdminActions,
   getAdminOverview,
   getAdminStatuses,
+  getAdminToolRequests,
   getAdminUsers,
   moderateStatus,
   refreshSession,
+  reviewAdminToolRequest,
   updateAdminUserRoles,
   updateAdminUserStatus
 } from "../lib/api-client";
 import { ChatLoadingScreen } from "./chat-loading-screen";
+import { getToolPackLabel } from "./new-chat/tools-registry";
 
 type UserFilter = "ALL" | "ACTIVE" | "SUSPENDED";
 type StatusFilter = "ALL" | "LIVE" | "REMOVED" | "EXPIRED";
@@ -33,6 +37,7 @@ export function AdminDashboardWorkspace() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [statuses, setStatuses] = useState<AdminStatus[]>([]);
   const [actions, setActions] = useState<AdminAction[]>([]);
+  const [toolRequests, setToolRequests] = useState<ConversationToolRequest[]>([]);
   const [userFilter, setUserFilter] = useState<UserFilter>("ALL");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("LIVE");
   const [userQuery, setUserQuery] = useState("");
@@ -40,6 +45,7 @@ export function AdminDashboardWorkspace() {
   const [notice, setNotice] = useState("");
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
   const [busyStatusId, setBusyStatusId] = useState<string | null>(null);
+  const [busyToolRequestId, setBusyToolRequestId] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
   const [statusDraft, setStatusDraft] = useState<StatusChangeDraft>(null);
   const [statusNote, setStatusNote] = useState("");
@@ -75,13 +81,17 @@ export function AdminDashboardWorkspace() {
         state: statusFilter,
         pageSize: 10
       }),
-      getAdminActions(accessToken)
+      getAdminActions(accessToken),
+      getAdminToolRequests(accessToken, {
+        status: "PENDING"
+      })
     ])
-      .then(([nextOverview, nextUsers, nextStatuses, nextActions]) => {
+      .then(([nextOverview, nextUsers, nextStatuses, nextActions, nextToolRequests]) => {
         setOverview(nextOverview);
         setUsers(nextUsers.items);
         setStatuses(nextStatuses.items);
         setActions(nextActions);
+        setToolRequests(nextToolRequests);
       })
       .catch((error) => setNotice(error instanceof Error ? error.message : "Could not load the site admin workspace."));
   }, [accessToken, canEnterAdmin, reloadTick, statusFilter, statusQuery, userFilter, userQuery]);
@@ -95,10 +105,11 @@ export function AdminDashboardWorkspace() {
             { label: "Suspended", value: overview.suspendedUsers, icon: ShieldAlert },
             { label: "Site admins", value: overview.siteAdmins, icon: Gavel },
             { label: "Platform admins", value: overview.platformAdmins, icon: UserCog },
-            { label: "Open reports", value: overview.openReports, icon: Activity }
+            { label: "Open reports", value: overview.openReports, icon: Activity },
+            { label: "Tool requests", value: toolRequests.length, icon: Sparkles }
           ]
         : [],
-    [overview]
+    [overview, toolRequests.length]
   );
 
   async function handleRoleToggle(user: AdminUser, role: ManagedRole) {
@@ -157,6 +168,27 @@ export function AdminDashboardWorkspace() {
       setNotice(error instanceof Error ? error.message : "Could not update that status.");
     } finally {
       setBusyStatusId(null);
+    }
+  }
+
+  async function handleReviewToolRequest(requestId: string, status: "APPROVED" | "DECLINED") {
+    if (!accessToken) return;
+    setBusyToolRequestId(requestId);
+    try {
+      await reviewAdminToolRequest(
+        requestId,
+        {
+          status,
+          reviewNote: status === "APPROVED" ? "Approved from the site admin desk." : "Declined from the site admin desk."
+        },
+        accessToken
+      );
+      setNotice(status === "APPROVED" ? "Tool pack approved for that room." : "Tool pack request declined.");
+      setReloadTick((current) => current + 1);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not review that tool request.");
+    } finally {
+      setBusyToolRequestId(null);
     }
   }
 
@@ -321,6 +353,32 @@ export function AdminDashboardWorkspace() {
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                       <span className="rounded-full bg-white px-3 py-2 text-[11px] font-semibold text-graphite/70">{status.counts.views} views - {status.counts.reactions} reactions - {status.counts.comments} comments</span>
                       <button className={`rounded-full px-4 py-2 text-xs font-semibold ${status.removedAt ? "border border-charcoal/10 bg-white text-charcoal" : "bg-charcoal text-cloud"}`} disabled={busyStatusId === status.id} onClick={() => { void handleModerateStatus(status, !Boolean(status.removedAt)); }} type="button">{status.removedAt ? "Restore status" : "Bring down status"}</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[32px] border border-charcoal/10 bg-white p-5 shadow-[0_20px_60px_rgba(24,18,15,0.06)]">
+              <div className="flex items-start justify-between gap-3">
+                <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-graphite/55">Tools activation</p><h2 className="mt-2 text-xl font-semibold text-charcoal">Approve room tool packs</h2></div>
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#efe6d7] text-charcoal"><Sparkles className="h-4 w-4" /></span>
+              </div>
+              <p className="mt-2 text-sm leading-7 text-graphite/68">Rooms can request shared boards, notes, polls, and community-care lanes. Nothing goes live until a site admin approves it here.</p>
+              <div className="mt-4 space-y-3">
+                {toolRequests.length === 0 ? <div className="rounded-[22px] border border-charcoal/10 bg-[#faf7f2] px-4 py-4 text-sm leading-7 text-graphite/68">No pending tool requests are waiting right now.</div> : toolRequests.map((request) => (
+                  <article className="rounded-[22px] border border-charcoal/10 bg-[#fcfbf7] p-4" key={request.id}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-charcoal">{getToolPackLabel(request.pack)}</p>
+                        <p className="mt-1 text-xs text-graphite/58">{request.conversation.title || request.conversation.type.toLowerCase()} • from {request.requestedBy.displayName}</p>
+                      </div>
+                      <span className="rounded-full bg-[#fff7de] px-2.5 py-1 text-[11px] font-semibold text-charcoal">Pending</span>
+                    </div>
+                    <p className="mt-3 text-sm leading-7 text-graphite/68">{request.note || "No extra reason was added to this request."}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button className="rounded-full bg-charcoal px-4 py-2 text-xs font-semibold text-cloud disabled:opacity-50" disabled={busyToolRequestId === request.id} onClick={() => { void handleReviewToolRequest(request.id, "APPROVED"); }} type="button">Approve</button>
+                      <button className="rounded-full border border-charcoal/10 bg-white px-4 py-2 text-xs font-semibold text-charcoal disabled:opacity-50" disabled={busyToolRequestId === request.id} onClick={() => { void handleReviewToolRequest(request.id, "DECLINED"); }} type="button">Decline</button>
                     </div>
                   </article>
                 ))}

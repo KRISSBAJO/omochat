@@ -25,6 +25,15 @@ enum ConversationType {
   CHANNEL
 }
 
+enum ConversationCategory {
+  GENERAL
+  CHURCH
+  WORKSPACE
+  COMMUNITY
+  DEPARTMENT
+  CARE_TEAM
+}
+
 enum ParticipantRole {
   OWNER
   ADMIN
@@ -112,6 +121,224 @@ enum AdminActionType {
   USER_ROLE_UPDATED
 }
 
+enum ConversationToolPack {
+  CORE_WORKSPACE
+  COMMUNITY_CARE
+  BOARDS
+  ATTENDANCE
+}
+
+enum ConversationBoardTemplate {
+  KANBAN
+  SPRINT
+  CUSTOM
+}
+
+enum ConversationBoardSprintStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ConversationBoardMemberRole {
+  MANAGER
+  EDITOR
+  CONTRIBUTOR
+  VIEWER
+}
+
+enum ConversationAttendanceShiftStatus {
+  DRAFT
+  PUBLISHED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ConversationAttendanceAssignmentStatus {
+  ASSIGNED
+  CONFIRMED
+  DECLINED
+  CALLED_OFF
+}
+
+enum ConversationAttendanceClockEventType {
+  CLOCK_IN
+  BREAK_START
+  BREAK_END
+  CLOCK_OUT
+  ADJUSTMENT
+}
+
+enum ConversationAttendanceClockMethod {
+  WEB
+  MOBILE
+  QR
+  NFC
+  PHOTO
+  MANUAL
+  KIOSK
+}
+
+enum ConversationAttendanceRecordStatus {
+  ON_CLOCK
+  ON_BREAK
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  ABSENT
+}
+
+enum ConversationAttendanceExceptionFlag {
+  LATE
+  EARLY_LEAVE
+  OVERTIME
+  MISSED_CLOCK_OUT
+  LOCATION_EXCEPTION
+  MANUAL_REVIEW
+}
+
+enum ConversationAttendanceLeaveType {
+  VACATION
+  SICK
+  PERSONAL
+  COMPASSIONATE
+  MINISTRY
+  HOLIDAY
+  UNPAID
+  OTHER
+}
+
+enum ConversationAttendanceLeaveStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+enum ConversationAttendanceHolidayScope {
+  ROOM
+  CATEGORY
+  GLOBAL
+}
+
+enum ConversationAttendanceLeaveAccrualCadence {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  MANUAL
+}
+
+enum ConversationAttendanceLeaveBalanceEntryType {
+  OPENING
+  ACCRUAL
+  ADJUSTMENT
+  REQUEST_APPROVAL
+  REQUEST_REVERSAL
+  CARRY_OVER
+}
+
+enum ConversationAttendanceRotaFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum ConversationAttendanceExportVariant {
+  SUMMARY
+  TIMESHEET
+  PAYROLL
+  LEAVE
+  AUDIT
+}
+
+enum ConversationAttendanceAuditAction {
+  POLICY_UPDATED
+  HOLIDAY_CREATED
+  HOLIDAY_UPDATED
+  LEAVE_POLICY_CREATED
+  LEAVE_POLICY_UPDATED
+  LEAVE_BALANCE_ADJUSTED
+  LEAVE_ACCRUAL_APPLIED
+  LEAVE_REQUEST_CREATED
+  LEAVE_REQUEST_REVIEWED
+  SHIFT_TEMPLATE_CREATED
+  SHIFT_TEMPLATE_UPDATED
+  SHIFT_CREATED
+  SHIFT_UPDATED
+  ROTA_GENERATED
+  CLOCK_EVENT_RECORDED
+  RECORD_REVIEWED
+  EXPORT_GENERATED
+}
+
+enum ConversationToolRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+enum ConversationNoteKind {
+  NOTE
+  ANNOUNCEMENT
+}
+
+enum ConversationTaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum ConversationTaskType {
+  TASK
+  FEATURE
+  BUG
+  IMPROVEMENT
+  FOLLOW_UP
+  REQUEST
+}
+
+enum ConversationTaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum PrayerRequestStatus {
+  OPEN
+  ANSWERED
+  ARCHIVED
+}
+
+enum CareRequestType {
+  PRAYER
+  FOLLOW_UP
+  VISITATION
+  COUNSELING
+  SUPPORT
+  WELFARE
+  GUEST
+}
+
+enum CareRequestVisibility {
+  PRIVATE
+  CARE_TEAM
+  ROOM
+}
+
+enum ConversationAnnouncementAudience {
+  ROOM
+  LEADS_ONLY
+  CARE_TEAM
+  FOLLOW_UP_TEAM
+  NEW_GUESTS
+}
+
 enum UserStatusPostType {
   TEXT
   IMAGE
@@ -184,6 +411,46 @@ model User {
   viewedStatusPosts       UserStatusView[]          @relation("ViewedStatusPosts")
   statusReactions         UserStatusReaction[]      @relation("ReactedStatusPosts")
   statusComments          UserStatusComment[]       @relation("CommentedStatusPosts")
+  requestedToolPacks      ConversationToolRequest[] @relation("RequestedConversationToolPacks")
+  reviewedToolPacks       ConversationToolRequest[] @relation("ReviewedConversationToolPacks")
+  activatedToolPacks      ConversationToolActivation[]
+  createdBoards           ConversationBoard[]       @relation("ConversationBoardCreators")
+  boardMemberships        ConversationBoardMember[] @relation("ConversationBoardMembers")
+  invitedBoardMembers     ConversationBoardMember[] @relation("ConversationBoardMemberInviters")
+  createdBoardSprints     ConversationBoardSprint[] @relation("ConversationBoardSprintCreators")
+  authoredToolNotes       ConversationToolNote[]    @relation("ConversationToolNoteAuthors")
+  updatedToolNotes        ConversationToolNote[]    @relation("ConversationToolNoteEditors")
+  createdToolTasks        ConversationToolTask[]    @relation("ConversationToolTaskCreators")
+  assignedToolTasks       ConversationToolTask[]    @relation("ConversationToolTaskAssignees")
+  watchedToolTasks        ConversationToolTaskWatcher[] @relation("ConversationToolTaskWatchers")
+  likedToolTasks          ConversationToolTaskLike[] @relation("ConversationToolTaskLikes")
+  authoredToolTaskComments ConversationToolTaskComment[] @relation("ConversationToolTaskCommentAuthors")
+  uploadedToolTaskAttachments ConversationToolTaskAttachment[] @relation("ConversationToolTaskAttachmentUploaders")
+  createdToolPolls        ConversationToolPoll[]    @relation("ConversationToolPollCreators")
+  toolPollVotes           ConversationToolPollVote[]
+  createdPrayerRequests   ConversationPrayerRequest[] @relation("ConversationPrayerRequestCreators")
+  assignedPrayerRequests  ConversationPrayerRequest[] @relation("ConversationPrayerRequestAssignees")
+  prayerRequestSupports   ConversationPrayerSupport[]
+  prayerRequestUpdates    ConversationPrayerUpdate[] @relation("ConversationPrayerUpdateAuthors")
+  createdAttendanceTemplates ConversationAttendanceShiftTemplate[] @relation("ConversationAttendanceTemplateCreators")
+  createdAttendanceShifts ConversationAttendanceShift[] @relation("ConversationAttendanceShiftCreators")
+  attendanceAssignments ConversationAttendanceAssignment[] @relation("ConversationAttendanceAssignments")
+  assignedAttendanceEntries ConversationAttendanceAssignment[] @relation("ConversationAttendanceAssignmentCreators")
+  attendanceRecords ConversationAttendanceRecord[] @relation("ConversationAttendanceRecords")
+  reviewedAttendanceRecords ConversationAttendanceRecord[] @relation("ConversationAttendanceRecordReviewers")
+  attendanceClockEvents ConversationAttendanceClockEvent[] @relation("ConversationAttendanceClockEventActors")
+  createdAttendancePolicies ConversationAttendancePolicy[] @relation("ConversationAttendancePolicyCreators")
+  updatedAttendancePolicies ConversationAttendancePolicy[] @relation("ConversationAttendancePolicyEditors")
+  createdAttendanceHolidays ConversationAttendanceHoliday[] @relation("ConversationAttendanceHolidayCreators")
+  createdAttendanceLeavePolicies ConversationAttendanceLeavePolicy[] @relation("ConversationAttendanceLeavePolicyCreators")
+  updatedAttendanceLeavePolicies ConversationAttendanceLeavePolicy[] @relation("ConversationAttendanceLeavePolicyEditors")
+  attendanceLeaveBalances ConversationAttendanceLeaveBalance[] @relation("ConversationAttendanceLeaveBalances")
+  attendanceLeaveBalanceEntrySubjects ConversationAttendanceLeaveBalanceEntry[] @relation("ConversationAttendanceLeaveBalanceEntryUsers")
+  attendanceLeaveBalanceEntries ConversationAttendanceLeaveBalanceEntry[] @relation("ConversationAttendanceLeaveBalanceEntryActors")
+  createdAttendanceRotaRuns ConversationAttendanceRotaRun[] @relation("ConversationAttendanceRotaRunCreators")
+  attendanceAuditLogs ConversationAttendanceAuditLog[] @relation("ConversationAttendanceAuditLogActors")
+  requestedAttendanceLeaves ConversationAttendanceLeaveRequest[] @relation("ConversationAttendanceLeaveRequestUsers")
+  reviewedAttendanceLeaves ConversationAttendanceLeaveRequest[] @relation("ConversationAttendanceLeaveRequestReviewers")
 
   @@index([tenantId])
   @@index([status])
@@ -292,6 +559,7 @@ model Conversation {
   tenantId                String?                   @db.Uuid
   createdById             String?                   @db.Uuid
   type                    ConversationType
+  category                ConversationCategory      @default(GENERAL)
   title                   String?
   description             String?
   avatarUrl               String?
@@ -309,6 +577,24 @@ model Conversation {
   acceptedMessageRequests DirectMessageRequest[]
   reports                 UserReport[]
   statusComments          UserStatusComment[]
+  toolRequests            ConversationToolRequest[]
+  toolActivations         ConversationToolActivation[]
+  boards                  ConversationBoard[]
+  toolNotes               ConversationToolNote[]
+  toolTasks               ConversationToolTask[]
+  toolPolls               ConversationToolPoll[]
+  prayerRequests          ConversationPrayerRequest[]
+  attendanceTemplates     ConversationAttendanceShiftTemplate[]
+  attendanceShifts        ConversationAttendanceShift[]
+  attendanceRecords       ConversationAttendanceRecord[]
+  attendancePolicy        ConversationAttendancePolicy?
+  attendanceHolidays      ConversationAttendanceHoliday[]
+  attendanceLeavePolicies ConversationAttendanceLeavePolicy[]
+  attendanceLeaveBalances ConversationAttendanceLeaveBalance[]
+  attendanceLeaveBalanceEntries ConversationAttendanceLeaveBalanceEntry[]
+  attendanceRotaRuns      ConversationAttendanceRotaRun[]
+  attendanceAuditLogs     ConversationAttendanceAuditLog[]
+  attendanceLeaveRequests ConversationAttendanceLeaveRequest[]
 
   @@index([tenantId])
   @@index([type])
@@ -362,6 +648,7 @@ model Message {
   notifications  Notification[]
   reports        UserReport[]
   statusComments UserStatusComment[]
+  toolTasks      ConversationToolTask[]
 
   @@index([conversationId, createdAt])
   @@index([senderId])
@@ -397,6 +684,730 @@ model MessageReaction {
   @@unique([messageId, userId, emoji])
   @@index([userId])
   @@map("message_reactions")
+}
+
+model ConversationToolRequest {
+  id               String                        @id @default(uuid()) @db.Uuid
+  conversationId   String                        @db.Uuid
+  requestedByUserId String                       @db.Uuid @map("requested_by_user_id")
+  reviewedByUserId String?                       @db.Uuid @map("reviewed_by_user_id")
+  pack             ConversationToolPack
+  status           ConversationToolRequestStatus @default(PENDING)
+  note             String?
+  reviewNote       String?                       @map("review_note")
+  reviewedAt       DateTime?                     @map("reviewed_at")
+  createdAt        DateTime                      @default(now())
+  updatedAt        DateTime                      @updatedAt
+  conversation     Conversation                  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  requestedBy      User                          @relation("RequestedConversationToolPacks", fields: [requestedByUserId], references: [id], onDelete: Cascade)
+  reviewedBy       User?                         @relation("ReviewedConversationToolPacks", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+  @@index([status, createdAt])
+  @@map("conversation_tool_requests")
+}
+
+model ConversationToolActivation {
+  id                String               @id @default(uuid()) @db.Uuid
+  conversationId    String               @db.Uuid
+  activatedByUserId String?              @db.Uuid @map("activated_by_user_id")
+  pack              ConversationToolPack
+  activatedAt       DateTime             @default(now()) @map("activated_at")
+  updatedAt         DateTime             @updatedAt
+  conversation      Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  activatedBy       User?                @relation(fields: [activatedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([conversationId, pack])
+  @@index([pack, activatedAt])
+  @@map("conversation_tool_activations")
+}
+
+model ConversationBoard {
+  id             String                    @id @default(uuid()) @db.Uuid
+  conversationId String                    @db.Uuid
+  createdById    String                    @db.Uuid
+  title          String
+  description    String?
+  codePrefix     String                    @default("ROOM") @map("code_prefix")
+  nextTaskNumber Int                       @default(1) @map("next_task_number")
+  template       ConversationBoardTemplate @default(KANBAN)
+  isDefault      Boolean                   @default(false) @map("is_default")
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  conversation   Conversation              @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdBy      User                      @relation("ConversationBoardCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  columns        ConversationBoardColumn[]
+  members        ConversationBoardMember[]
+  sprints        ConversationBoardSprint[]
+  tasks          ConversationToolTask[]
+
+  @@index([conversationId, createdAt])
+  @@index([conversationId, isDefault])
+  @@map("conversation_boards")
+}
+
+model ConversationBoardSprint {
+  id         String                       @id @default(uuid()) @db.Uuid
+  boardId     String                      @db.Uuid
+  createdById String                      @db.Uuid @map("created_by_id")
+  title      String
+  goal       String?
+  status     ConversationBoardSprintStatus @default(PLANNED)
+  startsAt   DateTime?                    @map("starts_at")
+  endsAt     DateTime?                    @map("ends_at")
+  sortOrder  Int                          @default(0) @map("sort_order")
+  createdAt  DateTime                     @default(now())
+  updatedAt  DateTime                     @updatedAt
+  board      ConversationBoard            @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  createdBy  User                         @relation("ConversationBoardSprintCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  tasks      ConversationToolTask[]
+
+  @@index([boardId, sortOrder])
+  @@index([boardId, status])
+  @@map("conversation_board_sprints")
+}
+
+model ConversationBoardColumn {
+  id         String                 @id @default(uuid()) @db.Uuid
+  boardId    String                 @db.Uuid
+  title      String
+  color      String?
+  sortOrder  Int                    @default(0) @map("sort_order")
+  taskStatus ConversationTaskStatus @default(TODO) @map("task_status")
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+  board      ConversationBoard      @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks      ConversationToolTask[]
+
+  @@index([boardId, sortOrder])
+  @@map("conversation_board_columns")
+}
+
+model ConversationBoardMember {
+  id            String                      @id @default(uuid()) @db.Uuid
+  boardId       String                      @db.Uuid
+  userId        String                      @db.Uuid
+  addedByUserId String?                     @db.Uuid @map("added_by_user_id")
+  role          ConversationBoardMemberRole @default(CONTRIBUTOR)
+  createdAt     DateTime                    @default(now())
+  updatedAt     DateTime                    @updatedAt
+  board         ConversationBoard           @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user          User                        @relation("ConversationBoardMembers", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy       User?                       @relation("ConversationBoardMemberInviters", fields: [addedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([boardId, userId])
+  @@index([boardId, role])
+  @@index([userId, createdAt])
+  @@map("conversation_board_members")
+}
+
+model ConversationToolNote {
+  id             String               @id @default(uuid()) @db.Uuid
+  conversationId String               @db.Uuid
+  createdById    String               @db.Uuid
+  updatedById    String?              @db.Uuid
+  kind           ConversationNoteKind @default(NOTE)
+  audience       ConversationAnnouncementAudience @default(ROOM)
+  title          String
+  body           String
+  pinnedAt       DateTime?            @map("pinned_at")
+  expiresAt      DateTime?            @map("expires_at")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  conversation   Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdBy      User                 @relation("ConversationToolNoteAuthors", fields: [createdById], references: [id], onDelete: Cascade)
+  updatedBy      User?                @relation("ConversationToolNoteEditors", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, kind, updatedAt])
+  @@index([conversationId, pinnedAt])
+  @@map("conversation_tool_notes")
+}
+
+model ConversationToolTask {
+  id               String                 @id @default(uuid()) @db.Uuid
+  conversationId   String                 @db.Uuid
+  createdById      String                 @db.Uuid
+  assignedToUserId String?                @db.Uuid @map("assigned_to_user_id")
+  sourceMessageId  String?                @db.Uuid @map("source_message_id")
+  boardId          String?                @db.Uuid @map("board_id")
+  columnId         String?                @db.Uuid @map("column_id")
+  sprintId         String?                @db.Uuid @map("sprint_id")
+  taskNumber       Int?                   @map("task_number")
+  taskCode         String?                @map("task_code")
+  title            String
+  details          String?
+  category         String?
+  taskType         ConversationTaskType   @default(TASK) @map("task_type")
+  priority         ConversationTaskPriority @default(MEDIUM)
+  storyPoints      Int?                   @map("story_points")
+  score            Int?
+  sprintName       String?                @map("sprint_name")
+  labels           String[]               @default([])
+  pinned           Boolean                @default(false)
+  status           ConversationTaskStatus @default(TODO)
+  sortOrder        Int                    @default(0) @map("sort_order")
+  dueAt            DateTime?              @map("due_at")
+  completedAt      DateTime?              @map("completed_at")
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  conversation     Conversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdBy        User                   @relation("ConversationToolTaskCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  assignedTo       User?                  @relation("ConversationToolTaskAssignees", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  sourceMessage    Message?               @relation(fields: [sourceMessageId], references: [id], onDelete: SetNull)
+  board            ConversationBoard?     @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  column           ConversationBoardColumn? @relation(fields: [columnId], references: [id], onDelete: SetNull)
+  sprint           ConversationBoardSprint? @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  comments         ConversationToolTaskComment[]
+  watchers         ConversationToolTaskWatcher[]
+  likes            ConversationToolTaskLike[]
+  attachments      ConversationToolTaskAttachment[]
+
+  @@index([conversationId, status, updatedAt])
+  @@index([assignedToUserId, status])
+  @@index([sourceMessageId])
+  @@index([boardId, columnId, sortOrder])
+  @@index([boardId, sprintId, status])
+  @@index([taskCode])
+  @@unique([boardId, taskNumber])
+  @@map("conversation_tool_tasks")
+}
+
+model ConversationToolTaskComment {
+  id        String                       @id @default(uuid()) @db.Uuid
+  taskId     String                      @db.Uuid
+  authorId  String                       @db.Uuid @map("author_id")
+  parentId  String?                      @db.Uuid @map("parent_id")
+  body      String
+  createdAt DateTime                     @default(now())
+  updatedAt DateTime                     @updatedAt
+  deletedAt DateTime?                    @map("deleted_at")
+  task      ConversationToolTask         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    User                         @relation("ConversationToolTaskCommentAuthors", fields: [authorId], references: [id], onDelete: Cascade)
+  parent    ConversationToolTaskComment? @relation("ConversationToolTaskCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   ConversationToolTaskComment[] @relation("ConversationToolTaskCommentReplies")
+
+  @@index([taskId, createdAt])
+  @@index([authorId, createdAt])
+  @@index([parentId])
+  @@map("conversation_tool_task_comments")
+}
+
+model ConversationToolTaskWatcher {
+  id        String               @id @default(uuid()) @db.Uuid
+  taskId    String               @db.Uuid
+  userId    String               @db.Uuid
+  createdAt DateTime             @default(now())
+  task      ConversationToolTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User                 @relation("ConversationToolTaskWatchers", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([userId, createdAt])
+  @@map("conversation_tool_task_watchers")
+}
+
+model ConversationToolTaskLike {
+  id        String               @id @default(uuid()) @db.Uuid
+  taskId    String               @db.Uuid
+  userId    String               @db.Uuid
+  createdAt DateTime             @default(now())
+  task      ConversationToolTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User                 @relation("ConversationToolTaskLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([userId, createdAt])
+  @@map("conversation_tool_task_likes")
+}
+
+model ConversationToolTaskAttachment {
+  id          String               @id @default(uuid()) @db.Uuid
+  taskId       String              @db.Uuid
+  uploadedById String              @db.Uuid @map("uploaded_by_id")
+  provider    MediaProvider        @default(CLOUDINARY)
+  bucket      String?
+  storageKey  String               @map("storage_key")
+  url         String
+  mimeType    String               @map("mime_type")
+  sizeBytes   Int                  @map("size_bytes")
+  width       Int?
+  height      Int?
+  durationMs  Int?                 @map("duration_ms")
+  checksum    String?
+  createdAt   DateTime             @default(now())
+  task        ConversationToolTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy  User                 @relation("ConversationToolTaskAttachmentUploaders", fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@index([uploadedById, createdAt])
+  @@map("conversation_tool_task_attachments")
+}
+
+model ConversationToolPoll {
+  id             String                       @id @default(uuid()) @db.Uuid
+  conversationId String                       @db.Uuid
+  createdById    String                       @db.Uuid
+  question       String
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+  closedAt       DateTime?                    @map("closed_at")
+  conversation   Conversation                 @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdBy      User                         @relation("ConversationToolPollCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  options        ConversationToolPollOption[]
+  votes          ConversationToolPollVote[]
+
+  @@index([conversationId, createdAt])
+  @@index([conversationId, closedAt])
+  @@map("conversation_tool_polls")
+}
+
+model ConversationToolPollOption {
+  id        String                   @id @default(uuid()) @db.Uuid
+  pollId    String                   @db.Uuid
+  label     String
+  sortOrder Int                      @default(0) @map("sort_order")
+  createdAt DateTime                 @default(now())
+  poll      ConversationToolPoll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes     ConversationToolPollVote[]
+
+  @@index([pollId, sortOrder])
+  @@map("conversation_tool_poll_options")
+}
+
+model ConversationToolPollVote {
+  id        String                     @id @default(uuid()) @db.Uuid
+  pollId     String                    @db.Uuid
+  optionId   String                    @db.Uuid
+  userId     String                    @db.Uuid
+  createdAt  DateTime                  @default(now())
+  poll       ConversationToolPoll      @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option     ConversationToolPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user       User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([optionId, createdAt])
+  @@map("conversation_tool_poll_votes")
+}
+
+model ConversationPrayerRequest {
+  id             String              @id @default(uuid()) @db.Uuid
+  conversationId String              @db.Uuid
+  createdById    String              @db.Uuid
+  assignedToUserId String?           @db.Uuid @map("assigned_to_user_id")
+  requestType    CareRequestType     @default(PRAYER) @map("request_type")
+  visibility     CareRequestVisibility @default(CARE_TEAM)
+  priority       ConversationTaskPriority @default(MEDIUM)
+  subjectName    String?             @map("subject_name")
+  subjectContact String?             @map("subject_contact")
+  title          String
+  body           String
+  status         PrayerRequestStatus @default(OPEN)
+  followUpAt     DateTime?           @map("follow_up_at")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  answeredAt     DateTime?           @map("answered_at")
+  resolvedAt     DateTime?           @map("resolved_at")
+  conversation   Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdBy      User                @relation("ConversationPrayerRequestCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  assignedTo     User?               @relation("ConversationPrayerRequestAssignees", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  supports       ConversationPrayerSupport[]
+  updates        ConversationPrayerUpdate[]
+
+  @@index([conversationId, status, updatedAt])
+  @@index([conversationId, visibility, updatedAt])
+  @@index([assignedToUserId, status])
+  @@map("conversation_prayer_requests")
+}
+
+model ConversationPrayerSupport {
+  id              String                    @id @default(uuid()) @db.Uuid
+  prayerRequestId String                    @db.Uuid @map("prayer_request_id")
+  userId          String                    @db.Uuid
+  createdAt       DateTime                  @default(now())
+  prayerRequest   ConversationPrayerRequest @relation(fields: [prayerRequestId], references: [id], onDelete: Cascade)
+  user            User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([prayerRequestId, userId])
+  @@index([userId, createdAt])
+  @@map("conversation_prayer_supports")
+}
+
+model ConversationPrayerUpdate {
+  id              String                    @id @default(uuid()) @db.Uuid
+  prayerRequestId String                    @db.Uuid @map("prayer_request_id")
+  authorId        String                    @db.Uuid @map("author_id")
+  body            String
+  isPrivate       Boolean                   @default(false) @map("is_private")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+  prayerRequest   ConversationPrayerRequest @relation(fields: [prayerRequestId], references: [id], onDelete: Cascade)
+  author          User                      @relation("ConversationPrayerUpdateAuthors", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([prayerRequestId, createdAt])
+  @@index([authorId, createdAt])
+  @@map("conversation_prayer_updates")
+}
+
+model ConversationAttendanceShiftTemplate {
+  id                 String        @id @default(uuid()) @db.Uuid
+  conversationId     String        @db.Uuid
+  createdById        String        @db.Uuid @map("created_by_id")
+  title              String
+  description        String?
+  locationName       String?       @map("location_name")
+  locationAddress    String?       @map("location_address")
+  startsAtTime       String        @map("starts_at_time")
+  endsAtTime         String        @map("ends_at_time")
+  breakMinutes       Int           @default(0) @map("break_minutes")
+  gracePeriodMinutes Int           @default(10) @map("grace_period_minutes")
+  daysOfWeek         Int[]         @default([]) @map("days_of_week")
+  requiresLocation   Boolean       @default(false) @map("requires_location")
+  requiresPhoto      Boolean       @default(false) @map("requires_photo")
+  requiresQr         Boolean       @default(false) @map("requires_qr")
+  requiresNfc        Boolean       @default(false) @map("requires_nfc")
+  geofenceLatitude   Float?        @map("geofence_latitude")
+  geofenceLongitude  Float?        @map("geofence_longitude")
+  geofenceRadiusM    Int?          @map("geofence_radius_m")
+  isActive           Boolean       @default(true) @map("is_active")
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  conversation       Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdBy          User          @relation("ConversationAttendanceTemplateCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  shifts             ConversationAttendanceShift[]
+  rotaRuns           ConversationAttendanceRotaRun[]
+
+  @@index([conversationId, createdAt])
+  @@index([conversationId, isActive])
+  @@map("conversation_attendance_shift_templates")
+}
+
+model ConversationAttendanceShift {
+  id                 String                             @id @default(uuid()) @db.Uuid
+  conversationId     String                             @db.Uuid
+  templateId         String?                            @db.Uuid @map("template_id")
+  createdById        String                             @db.Uuid @map("created_by_id")
+  title              String
+  notes              String?
+  locationName       String?                            @map("location_name")
+  locationAddress    String?                            @map("location_address")
+  startsAt           DateTime                           @map("starts_at")
+  endsAt             DateTime                           @map("ends_at")
+  breakMinutes       Int                                @default(0) @map("break_minutes")
+  gracePeriodMinutes Int                                @default(10) @map("grace_period_minutes")
+  approvalRequired   Boolean                            @default(true) @map("approval_required")
+  status             ConversationAttendanceShiftStatus  @default(PUBLISHED)
+  requiresLocation   Boolean                            @default(false) @map("requires_location")
+  requiresPhoto      Boolean                            @default(false) @map("requires_photo")
+  requiresQr         Boolean                            @default(false) @map("requires_qr")
+  requiresNfc        Boolean                            @default(false) @map("requires_nfc")
+  stationCode        String?                            @map("station_code")
+  geofenceLatitude   Float?                             @map("geofence_latitude")
+  geofenceLongitude  Float?                             @map("geofence_longitude")
+  geofenceRadiusM    Int?                               @map("geofence_radius_m")
+  rotaRunId          String?                            @db.Uuid @map("rota_run_id")
+  createdAt          DateTime                           @default(now())
+  updatedAt          DateTime                           @updatedAt
+  conversation       Conversation                       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  template           ConversationAttendanceShiftTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdBy          User                               @relation("ConversationAttendanceShiftCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  rotaRun            ConversationAttendanceRotaRun?     @relation(fields: [rotaRunId], references: [id], onDelete: SetNull)
+  assignments        ConversationAttendanceAssignment[]
+  records            ConversationAttendanceRecord[]
+
+  @@index([conversationId, startsAt])
+  @@index([conversationId, status, startsAt])
+  @@index([templateId])
+  @@index([rotaRunId, startsAt])
+  @@map("conversation_attendance_shifts")
+}
+
+model ConversationAttendanceAssignment {
+  id               String                                @id @default(uuid()) @db.Uuid
+  shiftId          String                                @db.Uuid
+  userId           String                                @db.Uuid
+  assignedByUserId String?                               @db.Uuid @map("assigned_by_user_id")
+  status           ConversationAttendanceAssignmentStatus @default(ASSIGNED)
+  createdAt        DateTime                              @default(now())
+  updatedAt        DateTime                              @updatedAt
+  shift            ConversationAttendanceShift           @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  user             User                                  @relation("ConversationAttendanceAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy       User?                                 @relation("ConversationAttendanceAssignmentCreators", fields: [assignedByUserId], references: [id], onDelete: SetNull)
+  record           ConversationAttendanceRecord?
+
+  @@unique([shiftId, userId])
+  @@index([userId, createdAt])
+  @@map("conversation_attendance_assignments")
+}
+
+model ConversationAttendanceRecord {
+  id               String                            @id @default(uuid()) @db.Uuid
+  conversationId   String                            @db.Uuid
+  shiftId          String                            @db.Uuid
+  assignmentId     String?                           @db.Uuid @unique @map("assignment_id")
+  userId           String                            @db.Uuid
+  reviewedByUserId String?                           @db.Uuid @map("reviewed_by_user_id")
+  status           ConversationAttendanceRecordStatus @default(ON_CLOCK)
+  flags            ConversationAttendanceExceptionFlag[] @default([])
+  clockInAt        DateTime?                         @map("clock_in_at")
+  clockOutAt       DateTime?                         @map("clock_out_at")
+  breakMinutes     Int                               @default(0) @map("break_minutes")
+  workedMinutes    Int                               @default(0) @map("worked_minutes")
+  overtimeMinutes  Int                               @default(0) @map("overtime_minutes")
+  lateMinutes      Int                               @default(0) @map("late_minutes")
+  earlyLeaveMinutes Int                              @default(0) @map("early_leave_minutes")
+  reviewNote       String?                           @map("review_note")
+  createdAt        DateTime                          @default(now())
+  updatedAt        DateTime                          @updatedAt
+  approvedAt       DateTime?                         @map("approved_at")
+  conversation     Conversation                      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  shift            ConversationAttendanceShift       @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  assignment       ConversationAttendanceAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  user             User                              @relation("ConversationAttendanceRecords", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy       User?                             @relation("ConversationAttendanceRecordReviewers", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  clockEvents      ConversationAttendanceClockEvent[]
+
+  @@index([conversationId, status, updatedAt])
+  @@index([shiftId, status])
+  @@index([userId, status])
+  @@map("conversation_attendance_records")
+}
+
+model ConversationAttendanceClockEvent {
+  id              String                           @id @default(uuid()) @db.Uuid
+  recordId        String                           @db.Uuid @map("record_id")
+  actorUserId     String                           @db.Uuid @map("actor_user_id")
+  eventType       ConversationAttendanceClockEventType @map("event_type")
+  method          ConversationAttendanceClockMethod
+  occurredAt      DateTime                         @default(now()) @map("occurred_at")
+  latitude        Float?
+  longitude       Float?
+  accuracyMeters  Float?                           @map("accuracy_meters")
+  proofUrl        String?                          @map("proof_url")
+  proofProvider   MediaProvider?                   @map("proof_provider")
+  qrValue         String?                          @map("qr_value")
+  stationCode     String?                          @map("station_code")
+  deviceLabel     String?                          @map("device_label")
+  note            String?
+  createdAt       DateTime                         @default(now())
+  record          ConversationAttendanceRecord     @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  actor           User                             @relation("ConversationAttendanceClockEventActors", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([recordId, occurredAt])
+  @@index([actorUserId, createdAt])
+  @@map("conversation_attendance_clock_events")
+}
+
+model ConversationAttendancePolicy {
+  id                        String       @id @default(uuid()) @db.Uuid
+  conversationId            String       @unique @db.Uuid
+  createdById               String       @db.Uuid @map("created_by_id")
+  updatedById               String?      @db.Uuid @map("updated_by_id")
+  timezone                  String       @default("UTC")
+  standardHoursPerDay       Int          @default(8) @map("standard_hours_per_day")
+  standardHoursPerWeek      Int          @default(40) @map("standard_hours_per_week")
+  overtimeAfterMinutes      Int          @default(480) @map("overtime_after_minutes")
+  doubleTimeAfterMinutes    Int          @default(720) @map("double_time_after_minutes")
+  lateGraceMinutes          Int          @default(10) @map("late_grace_minutes")
+  breakRequiredAfterMinutes Int          @default(360) @map("break_required_after_minutes")
+  breakDurationMinutes      Int          @default(30) @map("break_duration_minutes")
+  allowSelfClock            Boolean      @default(true) @map("allow_self_clock")
+  allowManualAdjustments    Boolean      @default(true) @map("allow_manual_adjustments")
+  requireSupervisorApproval Boolean      @default(true) @map("require_supervisor_approval")
+  requireLocation           Boolean      @default(false) @map("require_location")
+  requirePhoto              Boolean      @default(false) @map("require_photo")
+  requireQr                 Boolean      @default(false) @map("require_qr")
+  requireNfc                Boolean      @default(false) @map("require_nfc")
+  stationLabel              String?      @map("station_label")
+  stationCode               String?      @map("station_code")
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+  conversation              Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdBy                 User         @relation("ConversationAttendancePolicyCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  updatedBy                 User?        @relation("ConversationAttendancePolicyEditors", fields: [updatedById], references: [id], onDelete: SetNull)
+  holidays                  ConversationAttendanceHoliday[]
+  leavePolicies             ConversationAttendanceLeavePolicy[]
+  leaveRequests             ConversationAttendanceLeaveRequest[]
+
+  @@index([conversationId])
+  @@map("conversation_attendance_policies")
+}
+
+model ConversationAttendanceHoliday {
+  id             String                         @id @default(uuid()) @db.Uuid
+  conversationId String                         @db.Uuid
+  policyId       String?                        @db.Uuid @map("policy_id")
+  createdById    String                         @db.Uuid @map("created_by_id")
+  title          String
+  description    String?
+  scope          ConversationAttendanceHolidayScope @default(ROOM)
+  category       ConversationCategory?
+  startsOn       DateTime                       @map("starts_on")
+  endsOn         DateTime                       @map("ends_on")
+  isPaid         Boolean                        @default(true) @map("is_paid")
+  createdAt      DateTime                       @default(now())
+  updatedAt      DateTime                       @updatedAt
+  conversation   Conversation                   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  policy         ConversationAttendancePolicy?  @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  createdBy      User                           @relation("ConversationAttendanceHolidayCreators", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, startsOn])
+  @@index([scope, category, startsOn])
+  @@index([policyId, startsOn])
+  @@map("conversation_attendance_holidays")
+}
+
+model ConversationAttendanceLeavePolicy {
+  id                     String                                   @id @default(uuid()) @db.Uuid
+  conversationId         String                                   @db.Uuid
+  attendancePolicyId     String?                                  @db.Uuid @map("attendance_policy_id")
+  createdById            String                                   @db.Uuid @map("created_by_id")
+  updatedById            String?                                  @db.Uuid @map("updated_by_id")
+  title                  String
+  leaveType              ConversationAttendanceLeaveType          @map("leave_type")
+  annualAllowanceMinutes Int                                      @default(0) @map("annual_allowance_minutes")
+  carryOverMinutes       Int                                      @default(0) @map("carry_over_minutes")
+  accrualCadence         ConversationAttendanceLeaveAccrualCadence @default(MONTHLY) @map("accrual_cadence")
+  accrualAmountMinutes   Int                                      @default(0) @map("accrual_amount_minutes")
+  allowNegativeBalance   Boolean                                  @default(false) @map("allow_negative_balance")
+  requiresApproval       Boolean                                  @default(true) @map("requires_approval")
+  isDefault              Boolean                                  @default(false) @map("is_default")
+  isActive               Boolean                                  @default(true) @map("is_active")
+  createdAt              DateTime                                 @default(now())
+  updatedAt              DateTime                                 @updatedAt
+  conversation           Conversation                             @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  attendancePolicy       ConversationAttendancePolicy?            @relation(fields: [attendancePolicyId], references: [id], onDelete: SetNull)
+  createdBy              User                                     @relation("ConversationAttendanceLeavePolicyCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  updatedBy              User?                                    @relation("ConversationAttendanceLeavePolicyEditors", fields: [updatedById], references: [id], onDelete: SetNull)
+  balances               ConversationAttendanceLeaveBalance[]
+  leaveRequests          ConversationAttendanceLeaveRequest[]
+  balanceEntries         ConversationAttendanceLeaveBalanceEntry[]
+
+  @@index([conversationId, isActive, leaveType])
+  @@index([attendancePolicyId, leaveType])
+  @@map("conversation_attendance_leave_policies")
+}
+
+model ConversationAttendanceLeaveBalance {
+  id               String                                @id @default(uuid()) @db.Uuid
+  conversationId   String                                @db.Uuid
+  leavePolicyId    String                                @db.Uuid @map("leave_policy_id")
+  userId           String                                @db.Uuid
+  availableMinutes Int                                   @default(0) @map("available_minutes")
+  usedMinutes      Int                                   @default(0) @map("used_minutes")
+  pendingMinutes   Int                                   @default(0) @map("pending_minutes")
+  accruedMinutes   Int                                   @default(0) @map("accrued_minutes")
+  createdAt        DateTime                              @default(now())
+  updatedAt        DateTime                              @updatedAt
+  conversation     Conversation                          @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  leavePolicy      ConversationAttendanceLeavePolicy     @relation(fields: [leavePolicyId], references: [id], onDelete: Cascade)
+  user             User                                  @relation("ConversationAttendanceLeaveBalances", fields: [userId], references: [id], onDelete: Cascade)
+  entries          ConversationAttendanceLeaveBalanceEntry[]
+
+  @@unique([leavePolicyId, userId])
+  @@index([conversationId, userId])
+  @@map("conversation_attendance_leave_balances")
+}
+
+model ConversationAttendanceLeaveBalanceEntry {
+  id                  String                                     @id @default(uuid()) @db.Uuid
+  conversationId      String                                     @db.Uuid
+  leaveBalanceId      String                                     @db.Uuid @map("leave_balance_id")
+  leavePolicyId       String                                     @db.Uuid @map("leave_policy_id")
+  userId              String                                     @db.Uuid
+  actorUserId         String?                                    @db.Uuid @map("actor_user_id")
+  leaveRequestId      String?                                    @db.Uuid @map("leave_request_id")
+  entryType           ConversationAttendanceLeaveBalanceEntryType @map("entry_type")
+  minutesDelta        Int                                        @map("minutes_delta")
+  balanceAfterMinutes Int                                        @map("balance_after_minutes")
+  note                String?
+  effectiveAt         DateTime                                   @default(now()) @map("effective_at")
+  createdAt           DateTime                                   @default(now())
+  conversation        Conversation                               @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  leaveBalance        ConversationAttendanceLeaveBalance         @relation(fields: [leaveBalanceId], references: [id], onDelete: Cascade)
+  leavePolicy         ConversationAttendanceLeavePolicy          @relation(fields: [leavePolicyId], references: [id], onDelete: Cascade)
+  user                User                                       @relation("ConversationAttendanceLeaveBalanceEntryUsers", fields: [userId], references: [id], onDelete: Cascade)
+  actor               User?                                      @relation("ConversationAttendanceLeaveBalanceEntryActors", fields: [actorUserId], references: [id], onDelete: SetNull)
+  leaveRequest        ConversationAttendanceLeaveRequest?        @relation(fields: [leaveRequestId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, effectiveAt])
+  @@index([leaveBalanceId, effectiveAt])
+  @@index([leaveRequestId])
+  @@map("conversation_attendance_leave_balance_entries")
+}
+
+model ConversationAttendanceRotaRun {
+  id                  String                            @id @default(uuid()) @db.Uuid
+  conversationId      String                            @db.Uuid
+  templateId          String                            @db.Uuid @map("template_id")
+  createdById         String                            @db.Uuid @map("created_by_id")
+  title               String
+  frequency           ConversationAttendanceRotaFrequency
+  startsOn            DateTime                          @map("starts_on")
+  endsOn              DateTime                          @map("ends_on")
+  participantUserIds  String[]                          @default([]) @map("participant_user_ids")
+  generatedShiftCount Int                               @default(0) @map("generated_shift_count")
+  isActive            Boolean                           @default(true) @map("is_active")
+  lastGeneratedAt     DateTime?                         @map("last_generated_at")
+  createdAt           DateTime                          @default(now())
+  updatedAt           DateTime                          @updatedAt
+  conversation        Conversation                      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  template            ConversationAttendanceShiftTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  createdBy           User                              @relation("ConversationAttendanceRotaRunCreators", fields: [createdById], references: [id], onDelete: Cascade)
+  shifts              ConversationAttendanceShift[]
+
+  @@index([conversationId, createdAt])
+  @@index([templateId, startsOn])
+  @@map("conversation_attendance_rota_runs")
+}
+
+model ConversationAttendanceAuditLog {
+  id             String                           @id @default(uuid()) @db.Uuid
+  conversationId String                           @db.Uuid
+  actorUserId    String?                          @db.Uuid @map("actor_user_id")
+  action         ConversationAttendanceAuditAction
+  targetType     String                           @map("target_type")
+  targetId       String?                          @db.Uuid @map("target_id")
+  summary        String
+  metadata       Json?
+  createdAt      DateTime                         @default(now())
+  conversation   Conversation                     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  actor          User?                            @relation("ConversationAttendanceAuditLogActors", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+  @@index([action, createdAt])
+  @@map("conversation_attendance_audit_logs")
+}
+
+model ConversationAttendanceLeaveRequest {
+  id               String                            @id @default(uuid()) @db.Uuid
+  conversationId   String                            @db.Uuid
+  policyId         String?                           @db.Uuid @map("policy_id")
+  leavePolicyId    String?                           @db.Uuid @map("leave_policy_id")
+  userId           String                            @db.Uuid
+  reviewedByUserId String?                           @db.Uuid @map("reviewed_by_user_id")
+  leaveType        ConversationAttendanceLeaveType   @default(PERSONAL) @map("leave_type")
+  status           ConversationAttendanceLeaveStatus @default(PENDING)
+  title            String
+  reason           String?
+  startsAt         DateTime                          @map("starts_at")
+  endsAt           DateTime                          @map("ends_at")
+  minutesRequested Int                               @default(0) @map("minutes_requested")
+  isPartialDay     Boolean                           @default(false) @map("is_partial_day")
+  deductFromBalance Boolean                          @default(true) @map("deduct_from_balance")
+  reviewNote       String?                           @map("review_note")
+  decidedAt        DateTime?                         @map("decided_at")
+  createdAt        DateTime                          @default(now())
+  updatedAt        DateTime                          @updatedAt
+  conversation     Conversation                      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  policy           ConversationAttendancePolicy?     @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  leavePolicy      ConversationAttendanceLeavePolicy? @relation(fields: [leavePolicyId], references: [id], onDelete: SetNull)
+  user             User                              @relation("ConversationAttendanceLeaveRequestUsers", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy       User?                             @relation("ConversationAttendanceLeaveRequestReviewers", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  balanceEntries   ConversationAttendanceLeaveBalanceEntry[]
+
+  @@index([conversationId, status, startsAt])
+  @@index([userId, startsAt])
+  @@index([policyId, startsAt])
+  @@index([leavePolicyId, startsAt])
+  @@map("conversation_attendance_leave_requests")
 }
 
 model MediaAsset {

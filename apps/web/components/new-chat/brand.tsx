@@ -37,7 +37,7 @@ export function BrandLogo({ className = "", compact = false, showLabel = true, t
           <span className={`block truncate font-display ${compact ? "text-[1.05rem]" : "text-[1.35rem]"} font-bold ${titleClass}`}>
             Omochat
           </span>
-          <span className={`block truncate text-xs font-semibold uppercase tracking-[0.24em] ${bodyClass}`}>Keep the room warm</span>
+          <span className={`block truncate text-xs text-gray-100 font-semibold uppercase tracking-[0.24em] ${bodyClass}`}>Keep the room warm</span>
         </span>
       ) : null}
     </div>

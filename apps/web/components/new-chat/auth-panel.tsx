@@ -77,7 +77,7 @@ export function AuthPanel({ onSession }: { onSession: (session: AuthSession) => 
             <h1 className="font-display mt-6 max-w-lg text-[2.5rem] font-bold leading-[1.02] text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)] sm:text-[3.15rem]">
               State-of-the-art chat, calm enough to live in.
             </h1>
-            <p className="mt-4 max-w-md text-[15px] leading-7 text-white/88">
+            <p className="mt-4 max-w-md text-[15px] leading-7 text-white/90 drop-shadow-[0_6px_18px_rgba(0,0,0,0.28)]">
               Sign in with email, username, verified phone, or your short identity code. Every new account now gets a unique tag like{" "}
               <span className="font-bold text-white">@23yg2</span>.
             </p>

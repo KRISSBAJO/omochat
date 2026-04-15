@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { ConversationType, ParticipantRole, Prisma } from "@omochat/db";
+import { ConversationCategory, ConversationType, ParticipantRole, Prisma } from "@omochat/db";
 import { randomBytes } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { SafetyService } from "../safety/safety.service";
@@ -135,6 +135,7 @@ export class ConversationsService {
     const conversation = await this.prisma.conversation.create({
       data: {
         type: input.type,
+        category: input.type === ConversationType.DIRECT ? ConversationCategory.GENERAL : input.category ?? ConversationCategory.GENERAL,
         title: input.type === ConversationType.DIRECT ? null : input.title?.trim() || null,
         createdById,
         participants: {

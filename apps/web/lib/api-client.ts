@@ -1,4 +1,5 @@
 export type DirectMessagePolicy = "OPEN" | "REQUESTS_ONLY";
+export type ConversationCategory = "GENERAL" | "CHURCH" | "WORKSPACE" | "COMMUNITY" | "DEPARTMENT" | "CARE_TEAM";
 export type UserAccess = {
   isModerator: boolean;
   isPlatformAdmin: boolean;
@@ -39,6 +40,7 @@ export type AuthSession = {
 export type Conversation = {
   id: string;
   type: "DIRECT" | "GROUP" | "CHANNEL";
+  category: ConversationCategory;
   title: string | null;
   description?: string | null;
   avatarUrl?: string | null;
@@ -580,9 +582,612 @@ export type AdminStatusPage = {
   totalPages: number;
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+export type ConversationToolPack = "CORE_WORKSPACE" | "COMMUNITY_CARE" | "BOARDS" | "ATTENDANCE";
+export type ConversationToolRequestStatus = "PENDING" | "APPROVED" | "DECLINED";
+export type ConversationNoteKind = "NOTE" | "ANNOUNCEMENT";
+export type ConversationTaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
+export type ConversationTaskType = "TASK" | "FEATURE" | "BUG" | "IMPROVEMENT" | "FOLLOW_UP" | "REQUEST";
+export type ConversationTaskPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type ConversationBoardSprintStatus = "PLANNED" | "ACTIVE" | "COMPLETED";
+export type PrayerRequestStatus = "OPEN" | "ANSWERED" | "ARCHIVED";
+export type ConversationBoardTemplate = "KANBAN" | "SPRINT" | "CUSTOM";
+export type ConversationBoardMemberRole = "MANAGER" | "EDITOR" | "CONTRIBUTOR" | "VIEWER";
+export type ConversationAttendanceShiftStatus = "DRAFT" | "PUBLISHED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+export type ConversationAttendanceAssignmentStatus = "ASSIGNED" | "CONFIRMED" | "DECLINED" | "CALLED_OFF";
+export type ConversationAttendanceClockEventType = "CLOCK_IN" | "BREAK_START" | "BREAK_END" | "CLOCK_OUT" | "ADJUSTMENT";
+export type ConversationAttendanceClockMethod = "WEB" | "MOBILE" | "QR" | "NFC" | "PHOTO" | "MANUAL" | "KIOSK";
+export type ConversationAttendanceRecordStatus = "ON_CLOCK" | "ON_BREAK" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "ABSENT";
+export type ConversationAttendanceExceptionFlag = "LATE" | "EARLY_LEAVE" | "OVERTIME" | "MISSED_CLOCK_OUT" | "LOCATION_EXCEPTION" | "MANUAL_REVIEW";
+export type ConversationAttendanceLeaveType = "VACATION" | "SICK" | "PERSONAL" | "COMPASSIONATE" | "MINISTRY" | "HOLIDAY" | "UNPAID" | "OTHER";
+export type ConversationAttendanceLeaveStatus = "DRAFT" | "PENDING" | "APPROVED" | "DECLINED" | "CANCELLED";
 
-export async function apiRequest<T>(path: string, init: RequestInit = {}, accessToken?: string): Promise<T> {
+export type ToolUser = {
+  id: string;
+  username: string;
+  userCode: string | null;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
+export type ConversationToolActivation = {
+  id: string;
+  pack: ConversationToolPack;
+  activatedAt: string;
+  activatedBy: ToolUser | null;
+};
+
+export type ConversationToolRequest = {
+  id: string;
+  pack: ConversationToolPack;
+  status: ConversationToolRequestStatus;
+  note: string | null;
+  reviewNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt: string | null;
+  conversation: {
+    id: string;
+    type: Conversation["type"];
+    category: ConversationCategory;
+    title: string | null;
+  };
+  requestedBy: ToolUser;
+  reviewedBy: ToolUser | null;
+};
+
+export type ConversationToolNote = {
+  id: string;
+  kind: ConversationNoteKind;
+  audience: "ROOM" | "LEADS_ONLY" | "CARE_TEAM" | "FOLLOW_UP_TEAM" | "NEW_GUESTS";
+  title: string;
+  body: string;
+  pinnedAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: ToolUser;
+  updatedBy: ToolUser | null;
+};
+
+export type ConversationToolTask = {
+  id: string;
+  boardId: string | null;
+  columnId: string | null;
+  sprintId: string | null;
+  taskNumber: number | null;
+  taskCode: string | null;
+  title: string;
+  details: string | null;
+  category: string | null;
+  taskType: ConversationTaskType;
+  priority: ConversationTaskPriority;
+  storyPoints: number | null;
+  score: number | null;
+  sprintName: string | null;
+  labels: string[];
+  pinned: boolean;
+  status: ConversationTaskStatus;
+  sortOrder: number;
+  dueAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  board: {
+    id: string;
+    title: string;
+    template: ConversationBoardTemplate;
+    isDefault: boolean;
+  } | null;
+  column: {
+    id: string;
+    title: string;
+    color: string | null;
+    sortOrder: number;
+    taskStatus: ConversationTaskStatus;
+  } | null;
+  sprint: {
+    id: string;
+    title: string;
+    status: ConversationBoardSprintStatus;
+    startsAt: string | null;
+    endsAt: string | null;
+  } | null;
+  createdBy: ToolUser;
+  assignedTo: ToolUser | null;
+  sourceMessage: {
+    id: string;
+    body: string | null;
+    type: ChatMessage["type"];
+    createdAt: string;
+    sender: ToolUser | null;
+  } | null;
+  counts: {
+    attachments: number;
+    comments: number;
+    likes: number;
+    watchers: number;
+  };
+  viewerHasLiked: boolean;
+  viewerIsWatching: boolean;
+};
+
+export type ConversationToolTaskComment = {
+  id: string;
+  taskId: string;
+  parentId: string | null;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  author: ToolUser;
+};
+
+export type ConversationToolTaskAttachment = {
+  id: string;
+  provider: "LOCAL" | "S3" | "CLOUDINARY";
+  bucket: string | null;
+  storageKey: string;
+  url: string;
+  mimeType: string;
+  sizeBytes: number;
+  width: number | null;
+  height: number | null;
+  durationMs: number | null;
+  checksum: string | null;
+  createdAt: string;
+  uploadedBy: ToolUser;
+};
+
+export type ConversationToolTaskDetail = ConversationToolTask & {
+  attachments: ConversationToolTaskAttachment[];
+  comments: ConversationToolTaskComment[];
+};
+
+export type ConversationToolPoll = {
+  id: string;
+  question: string;
+  createdAt: string;
+  updatedAt: string;
+  closedAt: string | null;
+  createdBy: ToolUser;
+  totalVotes: number;
+  viewerVoteOptionId: string | null;
+  options: Array<{
+    id: string;
+    label: string;
+    sortOrder: number;
+    voteCount: number;
+  }>;
+};
+
+export type ConversationPrayerUpdate = {
+  id: string;
+  body: string;
+  isPrivate: boolean;
+  createdAt: string;
+  updatedAt: string;
+  author: ToolUser;
+};
+
+export type ConversationPrayerRequest = {
+  id: string;
+  requestType: "PRAYER" | "FOLLOW_UP" | "VISITATION" | "COUNSELING" | "SUPPORT" | "WELFARE" | "GUEST";
+  visibility: "PRIVATE" | "CARE_TEAM" | "ROOM";
+  priority: ConversationTaskPriority;
+  subjectName: string | null;
+  subjectContact: string | null;
+  title: string;
+  body: string;
+  status: PrayerRequestStatus;
+  followUpAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  answeredAt: string | null;
+  resolvedAt: string | null;
+  createdBy: ToolUser;
+  assignedTo: ToolUser | null;
+  supportCount: number;
+  viewerSupported: boolean;
+  updates: ConversationPrayerUpdate[];
+};
+
+export type ConversationAttendanceClockEvent = {
+  id: string;
+  eventType: ConversationAttendanceClockEventType;
+  method: ConversationAttendanceClockMethod;
+  occurredAt: string;
+  latitude: number | null;
+  longitude: number | null;
+  accuracyMeters: number | null;
+  proofUrl: string | null;
+  proofProvider: "LOCAL" | "S3" | "CLOUDINARY" | null;
+  qrValue: string | null;
+  stationCode: string | null;
+  deviceLabel: string | null;
+  note: string | null;
+  createdAt: string;
+  actor: ToolUser;
+};
+
+export type ConversationAttendanceRecord = {
+  id: string;
+  shiftId: string;
+  assignmentId: string | null;
+  userId: string;
+  status: ConversationAttendanceRecordStatus;
+  flags: ConversationAttendanceExceptionFlag[];
+  clockInAt: string | null;
+  clockOutAt: string | null;
+  breakMinutes: number;
+  workedMinutes: number;
+  overtimeMinutes: number;
+  lateMinutes: number;
+  earlyLeaveMinutes: number;
+  reviewNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  approvedAt: string | null;
+  user: ToolUser;
+  reviewedBy: ToolUser | null;
+  clockEvents: ConversationAttendanceClockEvent[];
+};
+
+export type ConversationAttendanceAssignment = {
+  id: string;
+  userId: string;
+  status: ConversationAttendanceAssignmentStatus;
+  createdAt: string;
+  updatedAt: string;
+  user: ToolUser;
+  assignedBy: ToolUser | null;
+  record: ConversationAttendanceRecord | null;
+};
+
+export type ConversationAttendanceShiftTemplate = {
+  id: string;
+  title: string;
+  description: string | null;
+  locationName: string | null;
+  locationAddress: string | null;
+  startsAtTime: string;
+  endsAtTime: string;
+  breakMinutes: number;
+  gracePeriodMinutes: number;
+  daysOfWeek: number[];
+  requiresLocation: boolean;
+  requiresPhoto: boolean;
+  requiresQr: boolean;
+  requiresNfc: boolean;
+  geofenceLatitude: number | null;
+  geofenceLongitude: number | null;
+  geofenceRadiusM: number | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: ToolUser;
+};
+
+export type ConversationAttendanceShift = {
+  id: string;
+  templateId: string | null;
+  title: string;
+  notes: string | null;
+  locationName: string | null;
+  locationAddress: string | null;
+  startsAt: string;
+  endsAt: string;
+  breakMinutes: number;
+  gracePeriodMinutes: number;
+  approvalRequired: boolean;
+  status: ConversationAttendanceShiftStatus;
+  requiresLocation: boolean;
+  requiresPhoto: boolean;
+  requiresQr: boolean;
+  requiresNfc: boolean;
+  stationCode: string | null;
+  geofenceLatitude: number | null;
+  geofenceLongitude: number | null;
+  geofenceRadiusM: number | null;
+  createdAt: string;
+  updatedAt: string;
+  template: {
+    id: string;
+    title: string;
+    startsAtTime: string;
+    endsAtTime: string;
+  } | null;
+  createdBy: ToolUser;
+  assignmentCount: number;
+  recordCount: number;
+  assignments: ConversationAttendanceAssignment[];
+  records: ConversationAttendanceRecord[];
+};
+
+export type ConversationAttendancePolicy = {
+  id: string;
+  timezone: string;
+  standardHoursPerDay: number;
+  standardHoursPerWeek: number;
+  overtimeAfterMinutes: number;
+  doubleTimeAfterMinutes: number;
+  lateGraceMinutes: number;
+  breakRequiredAfterMinutes: number;
+  breakDurationMinutes: number;
+  allowSelfClock: boolean;
+  allowManualAdjustments: boolean;
+  requireSupervisorApproval: boolean;
+  requireLocation: boolean;
+  requirePhoto: boolean;
+  requireQr: boolean;
+  requireNfc: boolean;
+  stationLabel: string | null;
+  stationCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: ToolUser;
+  updatedBy: ToolUser | null;
+};
+
+export type ConversationAttendanceHoliday = {
+  id: string;
+  policyId: string | null;
+  title: string;
+  description: string | null;
+  startsOn: string;
+  endsOn: string;
+  isPaid: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: ToolUser;
+};
+
+export type ConversationAttendanceLeaveRequest = {
+  id: string;
+  policyId: string | null;
+  userId: string;
+  leaveType: ConversationAttendanceLeaveType;
+  status: ConversationAttendanceLeaveStatus;
+  title: string;
+  reason: string | null;
+  startsAt: string;
+  endsAt: string;
+  minutesRequested: number;
+  isPartialDay: boolean;
+  deductFromBalance: boolean;
+  reviewNote: string | null;
+  decidedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: ToolUser;
+  reviewedBy: ToolUser | null;
+};
+
+export type ConversationAttendanceMemberHistory = {
+  member: {
+    id: string;
+    username: string;
+    userCode: string | null;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+  summary: {
+    scheduledShifts: number;
+    completedShifts: number;
+    workedMinutes: number;
+    overtimeMinutes: number;
+    lateCount: number;
+    exceptionCount: number;
+    approvedLeaveCount: number;
+    pendingLeaveCount: number;
+  };
+  recentRecords: ConversationAttendanceRecord[];
+  leaveRequests: ConversationAttendanceLeaveRequest[];
+  upcomingAssignments: Array<{
+    id: string;
+    title: string;
+    startsAt: string;
+    endsAt: string;
+    status: ConversationAttendanceShiftStatus;
+    assignmentCount: number;
+    recordCount: number;
+  }>;
+};
+
+export type ConversationAttendanceExportSummary = {
+  range: {
+    from: string;
+    to: string;
+  };
+  totals: {
+    memberCount: number;
+    recordCount: number;
+    approvedLeaveCount: number;
+    totalWorkedMinutes: number;
+    totalOvertimeMinutes: number;
+  };
+  rows: Array<{
+    userId: string;
+    member: string;
+    code: string;
+    workedMinutes: number;
+    breakMinutes: number;
+    overtimeMinutes: number;
+    lateCount: number;
+    exceptionCount: number;
+    approvedLeaveMinutes: number;
+    pendingLeaveMinutes: number;
+  }>;
+  csv: string;
+};
+
+export type ConversationToolPackCatalogItem = {
+  pack: ConversationToolPack;
+  title: string;
+  subtitle: string;
+  recommendedCategories: ConversationCategory[];
+};
+
+export type ConversationBoardMember = {
+  id: string;
+  role: ConversationBoardMemberRole;
+  createdAt: string;
+  updatedAt: string;
+  user: ToolUser;
+  addedBy: ToolUser | null;
+};
+
+export type ConversationBoardSprint = {
+  id: string;
+  boardId: string;
+  title: string;
+  goal: string | null;
+  status: ConversationBoardSprintStatus;
+  startsAt: string | null;
+  endsAt: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: ToolUser;
+};
+
+export type ConversationBoardColumn = {
+  id: string;
+  title: string;
+  color: string | null;
+  sortOrder: number;
+  taskStatus: ConversationTaskStatus;
+  createdAt: string;
+  updatedAt: string;
+  tasks: ConversationToolTask[];
+};
+
+export type ConversationBoard = {
+  id: string;
+  title: string;
+  description: string | null;
+  codePrefix: string;
+  template: ConversationBoardTemplate;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: ToolUser;
+  viewerRole: ConversationBoardMemberRole | null;
+  canManage: boolean;
+  canManageMembers: boolean;
+  canContribute: boolean;
+  memberCount: number;
+  taskCount: number;
+  members: ConversationBoardMember[];
+  sprints: ConversationBoardSprint[];
+  columns: ConversationBoardColumn[];
+};
+
+export type ConversationToolsWorkspace = {
+  conversation: {
+    id: string;
+    type: Conversation["type"];
+    category: ConversationCategory;
+    title: string | null;
+    participantCount: number;
+    participants: Conversation["participants"];
+  };
+  access: {
+    canManage: boolean;
+    canRequest: boolean;
+  };
+  packCatalog: ConversationToolPackCatalogItem[];
+  activePacks: ConversationToolActivation[];
+  requests: ConversationToolRequest[];
+  dashboard: {
+    boardCount: number;
+    openTasks: number;
+    inProgressTasks: number;
+    completedTasks: number;
+    noteCount: number;
+    announcementCount: number;
+    livePollCount: number;
+    prayerCount: number;
+    careAssignedCount: number;
+    urgentCareCount: number;
+    attendanceTemplateCount: number;
+    scheduledShiftCount: number;
+    onClockCount: number;
+    pendingAttendanceApprovals: number;
+    holidayCount: number;
+    pendingLeaveApprovals: number;
+    approvedLeaveCount: number;
+    attendanceExceptionCount: number;
+    dueFollowUpCount: number;
+    defaultBoard: {
+      id: string;
+      title: string;
+      codePrefix: string;
+      template: ConversationBoardTemplate;
+      isDefault: boolean;
+      memberCount: number;
+      taskCount: number;
+    } | null;
+    latestAnnouncement: ConversationToolNote | null;
+    nextTask: ConversationToolTask | null;
+    activePoll: ConversationToolPoll | null;
+    latestPrayer: ConversationPrayerRequest | null;
+    nextShift: {
+      id: string;
+      title: string;
+      startsAt: string;
+      endsAt: string;
+      status: ConversationAttendanceShiftStatus;
+      assignmentCount: number;
+      recordCount: number;
+    } | null;
+  };
+  notes: ConversationToolNote[];
+  tasks: ConversationToolTask[];
+  boards: ConversationBoard[];
+  polls: ConversationToolPoll[];
+  prayerRequests: ConversationPrayerRequest[];
+  attendanceTemplates: ConversationAttendanceShiftTemplate[];
+  attendanceShifts: ConversationAttendanceShift[];
+  attendanceRecords: ConversationAttendanceRecord[];
+  attendancePolicy: ConversationAttendancePolicy | null;
+  attendanceHolidays: ConversationAttendanceHoliday[];
+  attendanceLeaveRequests: ConversationAttendanceLeaveRequest[];
+};
+
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const AUTH_SESSION_REFRESH_EVENT = "omochat:session-refreshed";
+let refreshSessionPromise: Promise<AuthSession> | null = null;
+type ApiRequestError = Error & { status?: number };
+
+function dispatchSessionRefresh(session: AuthSession) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent<AuthSession>(AUTH_SESSION_REFRESH_EVENT, {
+      detail: session
+    })
+  );
+}
+
+export function subscribeToSessionRefresh(listener: (session: AuthSession) => void) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  const handleEvent = (event: Event) => {
+    const nextSession = (event as CustomEvent<AuthSession>).detail;
+    if (nextSession) {
+      listener(nextSession);
+    }
+  };
+
+  window.addEventListener(AUTH_SESSION_REFRESH_EVENT, handleEvent);
+  return () => window.removeEventListener(AUTH_SESSION_REFRESH_EVENT, handleEvent);
+}
+
+async function performRequest<T>(path: string, init: RequestInit = {}, accessToken?: string): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Content-Type", "application/json");
 
@@ -598,6 +1203,8 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}, access
 
   if (!response.ok) {
     const text = await response.text();
+    let message = `Request failed with ${response.status}`;
+
     if (text) {
       let parsed: { message?: string | string[] } | null = null;
       try {
@@ -607,18 +1214,63 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}, access
       }
 
       if (Array.isArray(parsed?.message)) {
-        throw new Error(parsed.message.join(", "));
+        message = parsed.message.join(", ");
+      } else if (typeof parsed?.message === "string") {
+        message = parsed.message;
+      } else {
+        message = text;
       }
-      if (typeof parsed?.message === "string") {
-        throw new Error(parsed.message);
-      }
-
-      throw new Error(text);
     }
-    throw new Error(`Request failed with ${response.status}`);
+
+    const error = new Error(message) as ApiRequestError;
+    error.status = response.status;
+    throw error;
   }
 
   return response.json() as Promise<T>;
+}
+
+async function refreshSessionWithLock() {
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = performRequest<AuthSession>("/auth/refresh", {
+      method: "POST",
+      body: JSON.stringify({})
+    }).then((session) => {
+      dispatchSessionRefresh(session);
+      return session;
+    }).finally(() => {
+      refreshSessionPromise = null;
+    });
+  }
+
+  return refreshSessionPromise;
+}
+
+export async function apiRequest<T>(path: string, init: RequestInit = {}, accessToken?: string): Promise<T> {
+  try {
+    return await performRequest<T>(path, init, accessToken);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const status = typeof error === "object" && error && "status" in error ? (error as ApiRequestError).status : undefined;
+    const canRetryWithRefresh =
+      Boolean(accessToken) &&
+      path !== "/auth/refresh" &&
+      path !== "/auth/login" &&
+      path !== "/auth/register" &&
+      path !== "/auth/logout" &&
+      (status === 401 ||
+        message === "Unauthorized" ||
+        message === "Invalid refresh token" ||
+        message === "Missing refresh token" ||
+        message.includes("401"));
+
+    if (!canRetryWithRefresh) {
+      throw error;
+    }
+
+    const nextSession = await refreshSessionWithLock();
+    return performRequest<T>(path, init, nextSession.accessToken);
+  }
 }
 
 export function register(input: {
@@ -642,10 +1294,7 @@ export function login(input: { identifier: string; password: string; platform?: 
 }
 
 export function refreshSession() {
-  return apiRequest<AuthSession>("/auth/refresh", {
-    method: "POST",
-    body: JSON.stringify({})
-  });
+  return refreshSessionWithLock();
 }
 
 export function logout(accessToken?: string) {
@@ -910,7 +1559,15 @@ export function getModerators(accessToken: string) {
   return apiRequest<ModeratorSummary[]>("/safety/moderators", {}, accessToken);
 }
 
-export function createConversation(input: { type: "DIRECT" | "GROUP" | "CHANNEL"; title?: string; participantIds: string[] }, accessToken: string) {
+export function createConversation(
+  input: {
+    type: "DIRECT" | "GROUP" | "CHANNEL";
+    title?: string;
+    category?: ConversationCategory;
+    participantIds: string[];
+  },
+  accessToken: string
+) {
   return apiRequest<Conversation>("/conversations", {
     method: "POST",
     body: JSON.stringify(input)
@@ -987,6 +1644,829 @@ export function reportConversation(
     method: "POST",
     body: JSON.stringify(input)
   }, accessToken);
+}
+
+export function getConversationToolsWorkspace(conversationId: string, accessToken: string) {
+  return apiRequest<ConversationToolsWorkspace>(`/conversations/${conversationId}/tools`, {}, accessToken);
+}
+
+export function requestConversationToolPack(
+  conversationId: string,
+  input: {
+    pack: ConversationToolPack;
+    note?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolRequest>(`/conversations/${conversationId}/tools/requests`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationBoard(
+  conversationId: string,
+  input: {
+    title: string;
+    description?: string;
+    template?: ConversationBoardTemplate;
+    columns?: Array<{
+      title: string;
+      color?: string;
+      taskStatus?: ConversationTaskStatus;
+      sortOrder?: number;
+    }>;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationBoard>(`/conversations/${conversationId}/tools/boards`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationBoard(
+  conversationId: string,
+  boardId: string,
+  input: {
+    title?: string;
+    description?: string;
+    template?: ConversationBoardTemplate;
+    isDefault?: boolean;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationBoard>(`/conversations/${conversationId}/tools/boards/${boardId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function deleteConversationBoard(
+  conversationId: string,
+  boardId: string,
+  accessToken: string
+) {
+  return apiRequest<{ ok: true }>(`/conversations/${conversationId}/tools/boards/${boardId}`, {
+    method: "DELETE"
+  }, accessToken);
+}
+
+export function addConversationBoardMember(
+  conversationId: string,
+  boardId: string,
+  input: {
+    userId: string;
+    role?: ConversationBoardMemberRole;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationBoard>(`/conversations/${conversationId}/tools/boards/${boardId}/members`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationBoardSprint(
+  conversationId: string,
+  boardId: string,
+  input: {
+    title: string;
+    goal?: string;
+    status?: ConversationBoardSprintStatus;
+    startsAt?: string;
+    endsAt?: string;
+    sortOrder?: number;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationBoard>(`/conversations/${conversationId}/tools/boards/${boardId}/sprints`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationBoardSprint(
+  conversationId: string,
+  boardId: string,
+  sprintId: string,
+  input: {
+    title?: string;
+    goal?: string | null;
+    status?: ConversationBoardSprintStatus;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    sortOrder?: number;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationBoard>(`/conversations/${conversationId}/tools/boards/${boardId}/sprints/${sprintId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function deleteConversationBoardSprint(
+  conversationId: string,
+  boardId: string,
+  sprintId: string,
+  accessToken: string
+) {
+  return apiRequest<{ ok: true }>(`/conversations/${conversationId}/tools/boards/${boardId}/sprints/${sprintId}`, {
+    method: "DELETE"
+  }, accessToken);
+}
+
+export function updateConversationBoardMember(
+  conversationId: string,
+  boardId: string,
+  memberUserId: string,
+  role: ConversationBoardMemberRole,
+  accessToken: string
+) {
+  return apiRequest<ConversationBoard>(`/conversations/${conversationId}/tools/boards/${boardId}/members/${memberUserId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role })
+  }, accessToken);
+}
+
+export function removeConversationBoardMember(
+  conversationId: string,
+  boardId: string,
+  memberUserId: string,
+  accessToken: string
+) {
+  return apiRequest<{ ok: true }>(`/conversations/${conversationId}/tools/boards/${boardId}/members/${memberUserId}`, {
+    method: "DELETE"
+  }, accessToken);
+}
+
+export function createConversationBoardColumn(
+  conversationId: string,
+  boardId: string,
+  input: {
+    title: string;
+    color?: string;
+    taskStatus?: ConversationTaskStatus;
+    sortOrder?: number;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationBoard>(`/conversations/${conversationId}/tools/boards/${boardId}/columns`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationBoardColumn(
+  conversationId: string,
+  boardId: string,
+  columnId: string,
+  input: {
+    title?: string;
+    color?: string;
+    taskStatus?: ConversationTaskStatus;
+    sortOrder?: number;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationBoard>(`/conversations/${conversationId}/tools/boards/${boardId}/columns/${columnId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function deleteConversationBoardColumn(
+  conversationId: string,
+  boardId: string,
+  columnId: string,
+  accessToken: string
+) {
+  return apiRequest<{ ok: true }>(`/conversations/${conversationId}/tools/boards/${boardId}/columns/${columnId}`, {
+    method: "DELETE"
+  }, accessToken);
+}
+
+export function createConversationToolNote(
+  conversationId: string,
+  input: {
+    kind: ConversationNoteKind;
+    title: string;
+    body: string;
+    audience?: "ROOM" | "LEADS_ONLY" | "CARE_TEAM" | "FOLLOW_UP_TEAM" | "NEW_GUESTS";
+    pinned?: boolean;
+    expiresAt?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolNote>(`/conversations/${conversationId}/tools/notes`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationToolNote(
+  conversationId: string,
+  noteId: string,
+  input: {
+    kind?: ConversationNoteKind;
+    title?: string;
+    body?: string;
+    audience?: "ROOM" | "LEADS_ONLY" | "CARE_TEAM" | "FOLLOW_UP_TEAM" | "NEW_GUESTS";
+    pinned?: boolean;
+    expiresAt?: string | null;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolNote>(`/conversations/${conversationId}/tools/notes/${noteId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function deleteConversationToolNote(conversationId: string, noteId: string, accessToken: string) {
+  return apiRequest<{ ok: true }>(`/conversations/${conversationId}/tools/notes/${noteId}`, {
+    method: "DELETE"
+  }, accessToken);
+}
+
+export function createConversationToolTask(
+  conversationId: string,
+  input: {
+    title: string;
+    details?: string;
+    category?: string;
+    taskType?: ConversationTaskType;
+    priority?: ConversationTaskPriority;
+    storyPoints?: number;
+    score?: number;
+    sprintName?: string;
+    sprintId?: string;
+    labels?: string[];
+    pinned?: boolean;
+    dueAt?: string;
+    assignedToUserId?: string;
+    boardId?: string;
+    columnId?: string;
+    sortOrder?: number;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolTask>(`/conversations/${conversationId}/tools/tasks`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationToolTaskFromMessage(
+  conversationId: string,
+  input: {
+    messageId: string;
+    title?: string;
+    category?: string;
+    taskType?: ConversationTaskType;
+    priority?: ConversationTaskPriority;
+    storyPoints?: number;
+    score?: number;
+    sprintName?: string;
+    sprintId?: string;
+    labels?: string[];
+    pinned?: boolean;
+    dueAt?: string;
+    assignedToUserId?: string;
+    boardId?: string;
+    columnId?: string;
+    sortOrder?: number;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolTask>(`/conversations/${conversationId}/tools/tasks/from-message`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationToolTask(
+  conversationId: string,
+  taskId: string,
+  input: {
+    title?: string;
+    details?: string;
+    category?: string;
+    taskType?: ConversationTaskType;
+    priority?: ConversationTaskPriority;
+    storyPoints?: number;
+    score?: number;
+    sprintName?: string;
+    sprintId?: string | null;
+    labels?: string[];
+    pinned?: boolean;
+    status?: ConversationTaskStatus;
+    dueAt?: string;
+    assignedToUserId?: string;
+    boardId?: string;
+    columnId?: string;
+    sortOrder?: number;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolTask>(`/conversations/${conversationId}/tools/tasks/${taskId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function getConversationToolTask(
+  conversationId: string,
+  taskId: string,
+  accessToken: string
+) {
+  return apiRequest<ConversationToolTaskDetail>(`/conversations/${conversationId}/tools/tasks/${taskId}`, {}, accessToken);
+}
+
+export function toggleConversationToolTaskWatch(
+  conversationId: string,
+  taskId: string,
+  accessToken: string
+) {
+  return apiRequest<ConversationToolTaskDetail>(`/conversations/${conversationId}/tools/tasks/${taskId}/watch`, {
+    method: "POST"
+  }, accessToken);
+}
+
+export function toggleConversationToolTaskLike(
+  conversationId: string,
+  taskId: string,
+  accessToken: string
+) {
+  return apiRequest<ConversationToolTaskDetail>(`/conversations/${conversationId}/tools/tasks/${taskId}/likes`, {
+    method: "POST"
+  }, accessToken);
+}
+
+export function createConversationToolTaskComment(
+  conversationId: string,
+  taskId: string,
+  input: {
+    body: string;
+    parentId?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolTaskDetail>(`/conversations/${conversationId}/tools/tasks/${taskId}/comments`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationToolTaskAttachment(
+  conversationId: string,
+  taskId: string,
+  input: {
+    provider: "LOCAL" | "S3" | "CLOUDINARY";
+    bucket?: string;
+    storageKey: string;
+    url: string;
+    mimeType: string;
+    sizeBytes: number;
+    width?: number;
+    height?: number;
+    durationMs?: number;
+    checksum?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolTaskDetail>(`/conversations/${conversationId}/tools/tasks/${taskId}/attachments`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function deleteConversationToolTask(conversationId: string, taskId: string, accessToken: string) {
+  return apiRequest<{ ok: true }>(`/conversations/${conversationId}/tools/tasks/${taskId}`, {
+    method: "DELETE"
+  }, accessToken);
+}
+
+export function createConversationToolPoll(
+  conversationId: string,
+  input: {
+    question: string;
+    options: string[];
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolPoll>(`/conversations/${conversationId}/tools/polls`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function voteConversationToolPoll(conversationId: string, pollId: string, optionId: string, accessToken: string) {
+  return apiRequest<ConversationToolPoll>(`/conversations/${conversationId}/tools/polls/${pollId}/votes`, {
+    method: "POST",
+    body: JSON.stringify({ optionId })
+  }, accessToken);
+}
+
+export function updateConversationToolPoll(
+  conversationId: string,
+  pollId: string,
+  input: {
+    closed?: boolean;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolPoll>(`/conversations/${conversationId}/tools/polls/${pollId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationPrayerRequest(
+  conversationId: string,
+  input: {
+    title: string;
+    body: string;
+    requestType?: "PRAYER" | "FOLLOW_UP" | "VISITATION" | "COUNSELING" | "SUPPORT" | "WELFARE" | "GUEST";
+    visibility?: "PRIVATE" | "CARE_TEAM" | "ROOM";
+    priority?: ConversationTaskPriority;
+    subjectName?: string;
+    subjectContact?: string;
+    assignedToUserId?: string;
+    followUpAt?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationPrayerRequest>(`/conversations/${conversationId}/tools/prayer-requests`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationPrayerRequest(
+  conversationId: string,
+  prayerRequestId: string,
+  input: {
+    status?: PrayerRequestStatus;
+    title?: string;
+    body?: string;
+    requestType?: "PRAYER" | "FOLLOW_UP" | "VISITATION" | "COUNSELING" | "SUPPORT" | "WELFARE" | "GUEST";
+    visibility?: "PRIVATE" | "CARE_TEAM" | "ROOM";
+    priority?: ConversationTaskPriority;
+    subjectName?: string;
+    subjectContact?: string;
+    assignedToUserId?: string | null;
+    followUpAt?: string | null;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationPrayerRequest>(`/conversations/${conversationId}/tools/prayer-requests/${prayerRequestId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function toggleConversationPrayerSupport(conversationId: string, prayerRequestId: string, accessToken: string) {
+  return apiRequest<ConversationPrayerRequest>(`/conversations/${conversationId}/tools/prayer-requests/${prayerRequestId}/support`, {
+    method: "POST",
+    body: JSON.stringify({})
+  }, accessToken);
+}
+
+export function createConversationPrayerUpdate(
+  conversationId: string,
+  prayerRequestId: string,
+  input: {
+    body: string;
+    isPrivate?: boolean;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationPrayerRequest>(`/conversations/${conversationId}/tools/prayer-requests/${prayerRequestId}/updates`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationAttendanceTemplate(
+  conversationId: string,
+  input: {
+    title: string;
+    description?: string;
+    locationName?: string;
+    locationAddress?: string;
+    startsAtTime: string;
+    endsAtTime: string;
+    breakMinutes?: number;
+    gracePeriodMinutes?: number;
+    daysOfWeek?: number[];
+    requiresLocation?: boolean;
+    requiresPhoto?: boolean;
+    requiresQr?: boolean;
+    requiresNfc?: boolean;
+    geofenceLatitude?: number;
+    geofenceLongitude?: number;
+    geofenceRadiusM?: number;
+    isActive?: boolean;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceShiftTemplate>(`/conversations/${conversationId}/tools/attendance/templates`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationAttendanceTemplate(
+  conversationId: string,
+  templateId: string,
+  input: Partial<{
+    title: string;
+    description: string | null;
+    locationName: string | null;
+    locationAddress: string | null;
+    startsAtTime: string;
+    endsAtTime: string;
+    breakMinutes: number;
+    gracePeriodMinutes: number;
+    daysOfWeek: number[];
+    requiresLocation: boolean;
+    requiresPhoto: boolean;
+    requiresQr: boolean;
+    requiresNfc: boolean;
+    geofenceLatitude: number | null;
+    geofenceLongitude: number | null;
+    geofenceRadiusM: number | null;
+    isActive: boolean;
+  }>,
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceShiftTemplate>(`/conversations/${conversationId}/tools/attendance/templates/${templateId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationAttendanceShift(
+  conversationId: string,
+  input: {
+    title: string;
+    templateId?: string;
+    notes?: string;
+    startsAt: string;
+    endsAt: string;
+    locationName?: string;
+    locationAddress?: string;
+    breakMinutes?: number;
+    gracePeriodMinutes?: number;
+    approvalRequired?: boolean;
+    status?: ConversationAttendanceShiftStatus;
+    requiresLocation?: boolean;
+    requiresPhoto?: boolean;
+    requiresQr?: boolean;
+    requiresNfc?: boolean;
+    stationCode?: string | null;
+    geofenceLatitude?: number;
+    geofenceLongitude?: number;
+    geofenceRadiusM?: number;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceShift>(`/conversations/${conversationId}/tools/attendance/shifts`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationAttendanceShift(
+  conversationId: string,
+  shiftId: string,
+  input: Partial<{
+    title: string;
+    templateId: string | null;
+    notes: string | null;
+    startsAt: string;
+    endsAt: string;
+    locationName: string | null;
+    locationAddress: string | null;
+    breakMinutes: number;
+    gracePeriodMinutes: number;
+    approvalRequired: boolean;
+    status: ConversationAttendanceShiftStatus;
+    requiresLocation: boolean;
+    requiresPhoto: boolean;
+    requiresQr: boolean;
+    requiresNfc: boolean;
+    stationCode: string | null;
+    geofenceLatitude: number | null;
+    geofenceLongitude: number | null;
+    geofenceRadiusM: number | null;
+  }>,
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceShift>(`/conversations/${conversationId}/tools/attendance/shifts/${shiftId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationAttendanceAssignment(
+  conversationId: string,
+  shiftId: string,
+  input: {
+    userId: string;
+    status?: ConversationAttendanceAssignmentStatus;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceShift>(`/conversations/${conversationId}/tools/attendance/shifts/${shiftId}/assignments`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationAttendanceAssignment(
+  conversationId: string,
+  shiftId: string,
+  assignmentId: string,
+  status: ConversationAttendanceAssignmentStatus,
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceShift>(`/conversations/${conversationId}/tools/attendance/shifts/${shiftId}/assignments/${assignmentId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  }, accessToken);
+}
+
+export function createConversationAttendanceClockEvent(
+  conversationId: string,
+  shiftId: string,
+  input: {
+    eventType: ConversationAttendanceClockEventType;
+    method?: ConversationAttendanceClockMethod;
+    latitude?: number;
+    longitude?: number;
+    accuracyMeters?: number;
+    proofUrl?: string;
+    proofProvider?: "LOCAL" | "S3" | "CLOUDINARY";
+    qrValue?: string;
+    stationCode?: string;
+    deviceLabel?: string;
+    note?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceRecord>(`/conversations/${conversationId}/tools/attendance/shifts/${shiftId}/clock`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function reviewConversationAttendanceRecord(
+  conversationId: string,
+  recordId: string,
+  input: {
+    status: ConversationAttendanceRecordStatus;
+    reviewNote?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceRecord>(`/conversations/${conversationId}/tools/attendance/records/${recordId}/review`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationAttendancePolicy(
+  conversationId: string,
+  input: Partial<{
+    timezone: string;
+    standardHoursPerDay: number;
+    standardHoursPerWeek: number;
+    overtimeAfterMinutes: number;
+    doubleTimeAfterMinutes: number;
+    lateGraceMinutes: number;
+    breakRequiredAfterMinutes: number;
+    breakDurationMinutes: number;
+    allowSelfClock: boolean;
+    allowManualAdjustments: boolean;
+    requireSupervisorApproval: boolean;
+    requireLocation: boolean;
+    requirePhoto: boolean;
+    requireQr: boolean;
+    requireNfc: boolean;
+    stationLabel: string | null;
+    stationCode: string | null;
+  }>,
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendancePolicy>(`/conversations/${conversationId}/tools/attendance/policy`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationAttendanceHoliday(
+  conversationId: string,
+  input: {
+    title: string;
+    description?: string;
+    startsOn: string;
+    endsOn: string;
+    isPaid?: boolean;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceHoliday>(`/conversations/${conversationId}/tools/attendance/holidays`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function updateConversationAttendanceHoliday(
+  conversationId: string,
+  holidayId: string,
+  input: Partial<{
+    title: string;
+    description: string | null;
+    startsOn: string;
+    endsOn: string;
+    isPaid: boolean;
+  }>,
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceHoliday>(`/conversations/${conversationId}/tools/attendance/holidays/${holidayId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function createConversationAttendanceLeaveRequest(
+  conversationId: string,
+  input: {
+    title: string;
+    reason?: string;
+    leaveType?: ConversationAttendanceLeaveType;
+    startsAt: string;
+    endsAt: string;
+    isPartialDay?: boolean;
+    deductFromBalance?: boolean;
+    userId?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceLeaveRequest>(`/conversations/${conversationId}/tools/attendance/leave-requests`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function reviewConversationAttendanceLeaveRequest(
+  conversationId: string,
+  leaveRequestId: string,
+  input: {
+    status: Extract<ConversationAttendanceLeaveStatus, "APPROVED" | "DECLINED" | "CANCELLED">;
+    reviewNote?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceLeaveRequest>(`/conversations/${conversationId}/tools/attendance/leave-requests/${leaveRequestId}/review`, {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  }, accessToken);
+}
+
+export function getConversationAttendanceMemberHistory(
+  conversationId: string,
+  memberUserId: string,
+  accessToken: string
+) {
+  return apiRequest<ConversationAttendanceMemberHistory>(`/conversations/${conversationId}/tools/attendance/history/${memberUserId}`, {}, accessToken);
+}
+
+export function exportConversationAttendance(
+  conversationId: string,
+  accessToken: string,
+  input?: {
+    from?: string;
+    to?: string;
+    userId?: string;
+  }
+) {
+  const params = new URLSearchParams();
+  if (input?.from) {
+    params.set("from", input.from);
+  }
+  if (input?.to) {
+    params.set("to", input.to);
+  }
+  if (input?.userId) {
+    params.set("userId", input.userId);
+  }
+
+  const query = params.toString();
+  return apiRequest<ConversationAttendanceExportSummary>(`/conversations/${conversationId}/tools/attendance/export${query ? `?${query}` : ""}`, {}, accessToken);
 }
 
 export function getMessages(conversationId: string, accessToken: string, input?: { cursor?: string; limit?: number }) {
@@ -1216,6 +2696,35 @@ export function getAdminUsers(
 
 export function getAdminActions(accessToken: string) {
   return apiRequest<AdminAction[]>("/admin/actions", {}, accessToken);
+}
+
+export function getAdminToolRequests(
+  accessToken: string,
+  input?: {
+    status?: ConversationToolRequestStatus;
+  }
+) {
+  const params = new URLSearchParams();
+  if (input?.status) {
+    params.set("status", input.status);
+  }
+
+  const query = params.toString();
+  return apiRequest<ConversationToolRequest[]>(`/admin/tool-requests${query ? `?${query}` : ""}`, {}, accessToken);
+}
+
+export function reviewAdminToolRequest(
+  requestId: string,
+  input: {
+    status: Exclude<ConversationToolRequestStatus, "PENDING">;
+    reviewNote?: string;
+  },
+  accessToken: string
+) {
+  return apiRequest<ConversationToolRequest>(`/admin/tool-requests/${requestId}/review`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  }, accessToken);
 }
 
 export function getAdminStatuses(

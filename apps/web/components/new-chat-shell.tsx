@@ -10,6 +10,7 @@ import {
   Camera,
   Check,
   ChevronDown,
+  ClipboardList,
   CircleUserRound,
   Copy,
   Crown,
@@ -62,11 +63,14 @@ import {
   BlockedUser,
   CallRecord,
   ChatMessage,
+  ConversationCategory,
+  ConversationToolsWorkspace,
   commentOnStatus,
   Conversation,
   ConversationInviteLink,
   createStatus,
   createConversationInviteLink,
+  createConversationToolTaskFromMessage,
   createConversation,
   deleteConversation as deleteRoom,
   deleteMessage,
@@ -76,6 +80,7 @@ import {
   getCallHistory,
   getBlockedUsers,
   getConversations,
+  getConversationToolsWorkspace,
   getModerators,
   getMessages,
   getMessageRequests,
@@ -100,6 +105,7 @@ import {
   reportConversation,
   reportUser,
   refreshSession,
+  subscribeToSessionRefresh,
   registerPushSubscription,
   RtcConfig,
   SearchUser,
@@ -132,6 +138,9 @@ import { AuthPanel } from "./new-chat/auth-panel";
 import { BrandLogo } from "./new-chat/brand";
 import { CallToastStack, LiveCallOverlay } from "./new-chat/call-overlays";
 import { MessageMediaGrid } from "./new-chat/message-media-grid";
+import { RoomCategoryPicker } from "./new-chat/room-category-picker";
+import { getDefaultRoomCategory } from "./new-chat/tools-registry";
+import { buildToolsStatusLine, hasCoreWorkspacePack, ToolsWorkspacePane } from "./new-chat/tools-mode";
 import {
   avatarBadge,
   conversationLabel,
@@ -168,7 +177,7 @@ const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 type ComposerMode = "DIRECT" | "GROUP" | "CHANNEL";
 type ComposerStage = "CHOOSER" | "PEOPLE" | "DETAILS";
 type ChatFilter = "ALL" | "UNREAD" | "DIRECT" | "GROUP" | "CHANNEL";
-type SidebarMode = "CHATS" | "STATUS" | "REQUESTS" | "VAULT";
+type SidebarMode = "CHATS" | "STATUS" | "REQUESTS" | "TOOLS" | "VAULT";
 type ActivityView = "REQUESTS" | "NOTIFICATIONS";
 type VaultView = "LOCKED" | "ARCHIVED";
 type SettingsView = "profile" | "reachability" | "phone" | "alerts" | "blocked" | "moderation";
@@ -197,6 +206,7 @@ export function NewChatShell() {
   const [composerStage, setComposerStage] = useState<ComposerStage>("CHOOSER");
   const [chatFilter, setChatFilter] = useState<ChatFilter>("ALL");
   const [composerTitle, setComposerTitle] = useState("");
+  const [composerCategory, setComposerCategory] = useState<ConversationCategory>("GENERAL");
   const [composerParticipants, setComposerParticipants] = useState<SearchUser[]>([]);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [openReactionPickerId, setOpenReactionPickerId] = useState<string | null>(null);
@@ -221,6 +231,8 @@ export function NewChatShell() {
     items: [],
     unreadCount: 0
   });
+  const [toolsWorkspace, setToolsWorkspace] = useState<ConversationToolsWorkspace | null>(null);
+  const [isToolsLoading, setIsToolsLoading] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>("CHATS");
   const [activityView, setActivityView] = useState<ActivityView>("REQUESTS");
@@ -507,6 +519,8 @@ export function NewChatShell() {
       .catch(() => undefined)
       .finally(() => setBooting(false));
   }, []);
+
+  useEffect(() => subscribeToSessionRefresh((nextSession) => setSession(nextSession)), []);
 
   useEffect(() => {
     if (!session?.user.id) {
@@ -1033,6 +1047,16 @@ export function NewChatShell() {
   }, [activeConversationId, session?.accessToken]);
 
   useEffect(() => {
+    if (!session?.accessToken || !activeConversationId) {
+      setToolsWorkspace(null);
+      setIsToolsLoading(false);
+      return;
+    }
+
+    void refreshToolsWorkspaceForConversation(activeConversationId, { quiet: true }).catch(() => undefined);
+  }, [activeConversationId, session?.accessToken]);
+
+  useEffect(() => {
     if (!session?.accessToken || !activeStatusSummary) {
       setActiveStatusDetail(null);
       return;
@@ -1135,6 +1159,10 @@ export function NewChatShell() {
     if (sidebar === "requests") {
       setSidebarMode("REQUESTS");
       setActivityView("REQUESTS");
+    }
+
+    if (sidebar === "tools") {
+      setSidebarMode("TOOLS");
     }
 
     if (conversationId) {
@@ -1748,6 +1776,30 @@ export function NewChatShell() {
     });
   }
 
+  async function refreshToolsWorkspaceForConversation(
+    conversationId: string,
+    options?: { quiet?: boolean }
+  ) {
+    if (!session?.accessToken) {
+      return null;
+    }
+
+    setIsToolsLoading(true);
+    try {
+      const nextWorkspace = await getConversationToolsWorkspace(conversationId, session.accessToken);
+      setToolsWorkspace(nextWorkspace);
+      return nextWorkspace;
+    } catch (error) {
+      setToolsWorkspace(null);
+      if (!options?.quiet) {
+        setNotice(error instanceof Error ? error.message : "Could not load the tools workspace for this room.");
+      }
+      return null;
+    } finally {
+      setIsToolsLoading(false);
+    }
+  }
+
   async function loadOlderMessages() {
     if (!session?.accessToken || !activeConversationId || !nextMessagesCursor || isLoadingOlderMessages) {
       return;
@@ -2264,6 +2316,7 @@ export function NewChatShell() {
     setComposerMode("DIRECT");
     setComposerStage("CHOOSER");
     setComposerTitle("");
+    setComposerCategory("GENERAL");
     setComposerParticipants([]);
     setSearchQuery("");
     setSearchResults([]);
@@ -2283,6 +2336,7 @@ export function NewChatShell() {
     setComposerMode(mode);
     setComposerStage("PEOPLE");
     setComposerTitle("");
+    setComposerCategory(getDefaultRoomCategory(mode));
     setComposerParticipants([]);
     setSearchQuery("");
     setSearchResults([]);
@@ -3161,7 +3215,8 @@ export function NewChatShell() {
         {
           type: composerMode,
           title: composerTitle.trim(),
-          participantIds: composerParticipants.map((participant) => participant.id)
+          participantIds: composerParticipants.map((participant) => participant.id),
+          category: composerCategory
         },
         session.accessToken
       );
@@ -3222,6 +3277,27 @@ export function NewChatShell() {
     }
   }
 
+  async function handleCreateTaskFromMessage(message: ChatMessage) {
+    if (!session?.accessToken || !activeConversationId) {
+      return;
+    }
+
+    try {
+      await createConversationToolTaskFromMessage(
+        activeConversationId,
+        {
+          messageId: message.id
+        },
+        session.accessToken
+      );
+      await refreshToolsWorkspaceForConversation(activeConversationId, { quiet: true });
+      setSidebarMode("TOOLS");
+      setNotice("Message added to the room task board.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not turn that message into a task.");
+    }
+  }
+
   async function handleLogout() {
     await removeBrowserPushSubscription(session?.accessToken).catch(() => undefined);
     await logout(session?.accessToken).catch(() => undefined);
@@ -3232,6 +3308,7 @@ export function NewChatShell() {
     setConversations([]);
     setActiveConversationId(null);
     setMessages([]);
+    setToolsWorkspace(null);
   }
 
   if (booting) {
@@ -3245,6 +3322,8 @@ export function NewChatShell() {
   const viewer = currentUser;
   const canModerateStatuses = viewer.access.isModerator || viewer.access.isPlatformAdmin || viewer.access.isSiteAdmin;
   const activePartner = activeConversation?.type === "DIRECT" ? directPartner(activeConversation, viewer) : null;
+  const hasCoreWorkspaceTools = hasCoreWorkspacePack(toolsWorkspace);
+  const isViewingTools = sidebarMode === "TOOLS";
   const roomStatusLine = activeConversation
     ? activeConversation.type === "DIRECT" && activePartner
       ? presence[activePartner.id]
@@ -3254,6 +3333,7 @@ export function NewChatShell() {
           : "offline"
       : `${activeMembers.length} participants in ${formatConversationType(activeConversation.type).toLowerCase()}`
     : "Search for someone new or open a recent conversation.";
+  const toolsStatusLine = buildToolsStatusLine(activeConversation, isToolsLoading, toolsWorkspace);
   const visibleSearchResults = normalizedSearch.length >= 2
     ? searchResults.filter((user) => user.id !== viewer.id)
     : [];
@@ -3306,6 +3386,7 @@ export function NewChatShell() {
         activePartner={activePartner}
         activeRoomLabel={activeRoomLabel}
         activeTypingUsers={activeTypingUsers}
+        accessToken={session.accessToken}
         attachmentInputRef={attachmentInputRef}
         avatarInputRef={avatarInputRef}
         browserNotificationPermission={browserNotificationPermission}
@@ -3314,6 +3395,7 @@ export function NewChatShell() {
         cameraInputRef={cameraInputRef}
         composerMode={composerMode}
         composerStage={composerStage}
+        composerCategory={composerCategory}
         composerParticipants={composerParticipants}
         composerTitle={composerTitle}
         conversations={filteredConversations}
@@ -3333,6 +3415,7 @@ export function NewChatShell() {
         handleBlockActiveUser={handleBlockActiveUser}
         handleAddGroupMember={handleAddGroupMember}
         handleCopyInviteLink={handleCopyInviteLink}
+        handleCreateTaskFromMessage={handleCreateTaskFromMessage}
         handleDeleteMessage={handleDeleteMessage}
         handleDeleteActiveGroup={handleDeleteActiveGroup}
         handleLogout={handleLogout}
@@ -3373,6 +3456,7 @@ export function NewChatShell() {
         isGifPickerOpen={isGifPickerOpen}
         isModerationBusy={isModerationBusy}
         isModerationOpen={isModerationOpen}
+        isToolsLoading={isToolsLoading}
         isPhoneBusy={isPhoneBusy}
         isAvatarUploading={isAvatarUploading}
         isLocatingProfile={isLocatingProfile}
@@ -3411,11 +3495,21 @@ export function NewChatShell() {
         requestRecipient={requestRecipient}
         replyTarget={replyTarget}
         roomStatusLine={roomStatusLine}
+        toolsStatusLine={toolsStatusLine}
         setActivityView={setActivityView}
         searchQuery={searchQuery}
+        hasCoreWorkspaceTools={hasCoreWorkspaceTools}
+        isViewingTools={isViewingTools}
+        onNotice={setNotice}
+        refreshActiveToolsWorkspace={() =>
+          activeConversation
+            ? refreshToolsWorkspaceForConversation(activeConversation.id, { quiet: true }).then(() => undefined)
+            : Promise.resolve()
+        }
         setSidebarMode={setSidebarMode}
         setActiveConversationId={setActiveConversationId}
         setChatFilter={setChatFilter}
+        setComposerCategory={setComposerCategory}
         setComposerMode={setComposerMode}
         setComposerTitle={setComposerTitle}
         setDraft={setDraft}
@@ -3461,6 +3555,7 @@ export function NewChatShell() {
         openComposerLauncher={openComposerLauncher}
         addComposerParticipant={addComposerParticipant}
         removeComposerParticipant={removeComposerParticipant}
+        toolsWorkspace={toolsWorkspace}
       />
       <ForwardMessageModal
         isBusy={isForwardBusy}
@@ -3640,13 +3735,16 @@ export function NewChatShell() {
               </div>
 
               {composerMode !== "DIRECT" ? (
-                <input
-                  aria-label="Room title"
-                  className="mt-4 w-full rounded-2xl border border-charcoal/10 bg-cloud px-4 py-3 text-sm outline-none ring-honey/30 transition focus:ring-4"
-                  onChange={(event) => setComposerTitle(event.target.value)}
-                  placeholder={composerMode === "GROUP" ? "Group name" : "Channel name"}
-                  value={composerTitle}
-                />
+                <>
+                  <input
+                    aria-label="Room title"
+                    className="mt-4 w-full rounded-2xl border border-charcoal/10 bg-cloud px-4 py-3 text-sm outline-none ring-honey/30 transition focus:ring-4"
+                    onChange={(event) => setComposerTitle(event.target.value)}
+                    placeholder={composerMode === "GROUP" ? "Group name" : "Channel name"}
+                    value={composerTitle}
+                  />
+                  <RoomCategoryPicker onChange={setComposerCategory} value={composerCategory} />
+                </>
               ) : null}
 
               <label className="mt-4 block">
@@ -4339,6 +4437,7 @@ type CompactChatWorkspaceProps = {
   activePartner: Conversation["participants"][number]["user"] | null;
   activeRoomLabel: string | null;
   activeTypingUsers: Array<SearchUser | PublicUser>;
+  accessToken: string;
   addComposerParticipant: (user: SearchUser) => void;
   attachmentInputRef: React.RefObject<HTMLInputElement | null>;
   avatarInputRef: React.RefObject<HTMLInputElement | null>;
@@ -4350,6 +4449,7 @@ type CompactChatWorkspaceProps = {
   cameraInputRef: React.RefObject<HTMLInputElement | null>;
   composerMode: ComposerMode;
   composerStage: ComposerStage;
+  composerCategory: ConversationCategory;
   composerParticipants: SearchUser[];
   composerTitle: string;
   conversations: Conversation[];
@@ -4373,6 +4473,7 @@ type CompactChatWorkspaceProps = {
   handleDeleteActiveGroup: () => Promise<void>;
   handleDeleteMessage: (messageId: string) => Promise<void>;
   handleDeclineMessageRequest: (requestId: string) => Promise<void>;
+  handleCreateTaskFromMessage: (message: ChatMessage) => Promise<void>;
   handleLeaveActiveGroup: () => Promise<void>;
   handleLogout: () => Promise<void>;
   handleEnableBrowserNotifications: () => Promise<void>;
@@ -4417,6 +4518,7 @@ type CompactChatWorkspaceProps = {
   isLoadingOlderMessages: boolean;
   isModerationBusy: boolean;
   isModerationOpen: boolean;
+  isToolsLoading: boolean;
   isAvatarUploading: boolean;
   isLocatingProfile: boolean;
   isPhoneBusy: boolean;
@@ -4472,11 +4574,17 @@ type CompactChatWorkspaceProps = {
   replyTarget: ChatMessage | null;
   removeComposerParticipant: (userId: string) => void;
   roomStatusLine: string;
+  toolsStatusLine: string;
   searchQuery: string;
+  hasCoreWorkspaceTools: boolean;
+  isViewingTools: boolean;
+  onNotice: (value: string) => void;
+  refreshActiveToolsWorkspace: () => Promise<void>;
   setActivityView: (value: ActivityView) => void;
   setSidebarMode: (value: SidebarMode) => void;
   setActiveConversationId: (value: string) => void;
   setChatFilter: (value: ChatFilter) => void;
+  setComposerCategory: (value: ConversationCategory) => void;
   setComposerMode: (value: ComposerMode) => void;
   setComposerTitle: (value: string) => void;
   setDraft: (value: string) => void;
@@ -4532,6 +4640,7 @@ type CompactChatWorkspaceProps = {
   viewer: PublicUser;
   visibleSearchResults: SearchUser[];
   openComposerLauncher: () => void;
+  toolsWorkspace: ConversationToolsWorkspace | null;
 };
 
 function CompactChatWorkspace({
@@ -4539,6 +4648,7 @@ function CompactChatWorkspace({
   activePartner,
   activeRoomLabel,
   activeTypingUsers,
+  accessToken,
   addComposerParticipant,
   attachmentInputRef,
   avatarInputRef,
@@ -4550,6 +4660,7 @@ function CompactChatWorkspace({
   cameraInputRef,
   composerMode,
   composerStage,
+  composerCategory,
   composerParticipants,
   composerTitle,
   conversations,
@@ -4573,6 +4684,7 @@ function CompactChatWorkspace({
   handleDeleteActiveGroup,
   handleDeleteMessage,
   handleDeclineMessageRequest,
+  handleCreateTaskFromMessage,
   handleEnableBrowserNotifications,
   handleLeaveActiveGroup,
   handleLogout,
@@ -4609,6 +4721,7 @@ function CompactChatWorkspace({
   isLoadingOlderMessages,
   isModerationBusy,
   isModerationOpen,
+  isToolsLoading,
   isAvatarUploading,
   isLocatingProfile,
   isPhoneBusy,
@@ -4647,11 +4760,17 @@ function CompactChatWorkspace({
   replyTarget,
   removeComposerParticipant,
   roomStatusLine,
+  toolsStatusLine,
   searchQuery,
+  hasCoreWorkspaceTools,
+  isViewingTools,
+  onNotice,
+  refreshActiveToolsWorkspace,
   setActivityView,
   setSidebarMode,
   setActiveConversationId,
   setChatFilter,
+  setComposerCategory,
   setComposerMode,
   setComposerTitle,
   setDraft,
@@ -4693,7 +4812,8 @@ function CompactChatWorkspace({
   vaultView,
   viewer,
   visibleSearchResults,
-  openComposerLauncher
+  openComposerLauncher,
+  toolsWorkspace
 }: CompactChatWorkspaceProps) {
   const {
     activeDetail: activeStatusDetail,
@@ -4745,15 +4865,17 @@ function CompactChatWorkspace({
   const activityCount = pendingRequestCount + notificationUnreadCount;
   const vaultCount = lockedConversations.length + archivedConversations.length;
   const sidebarTitle =
-    sidebarMode === "REQUESTS" ? "Activity" : sidebarMode === "VAULT" ? "Vault" : sidebarMode === "STATUS" ? "Status" : "Chats";
+    sidebarMode === "REQUESTS" ? "Activity" : sidebarMode === "VAULT" ? "Vault" : sidebarMode === "STATUS" ? "Status" : sidebarMode === "TOOLS" ? "Tools" : "Chats";
   const sidebarSubtitle =
     sidebarMode === "REQUESTS"
       ? "Requests and notifications stay in one review lane."
       : sidebarMode === "STATUS"
         ? "Photos, videos, and quick text moments that roll off on their own."
-      : sidebarMode === "VAULT"
-        ? "Locked and archived chats stay out of the main inbox."
-        : "Search, start a room, and keep the thread list light.";
+        : sidebarMode === "TOOLS"
+          ? "Room boards, shared notes, polls, and care packs live here once site admins approve them."
+        : sidebarMode === "VAULT"
+          ? "Locked and archived chats stay out of the main inbox."
+          : "Search, start a room, and keep the thread list light.";
   const sidebarConversations =
     sidebarMode === "VAULT"
       ? vaultView === "LOCKED"
@@ -4772,6 +4894,7 @@ function CompactChatWorkspace({
     >
   >({});
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
+  const [isToolsSidebarCollapsed, setIsToolsSidebarCollapsed] = useState(false);
   const [detailsPanelView, setDetailsPanelView] = useState<"OVERVIEW" | "MEMBERS">("OVERVIEW");
   const groupMemberInputRef = useRef<HTMLInputElement | null>(null);
   const activeRelationship = activeConversation?.relationshipState ?? {
@@ -4816,6 +4939,7 @@ function CompactChatWorkspace({
   );
   const statusModerationAccess = viewer.access.isModerator || viewer.access.isPlatformAdmin || viewer.access.isSiteAdmin;
   const canOpenStatusActivity = Boolean(activeStatusDetail && (isStatusOwner || statusModerationAccess));
+  const isDesktopToolsSidebarCollapsed = sidebarMode === "TOOLS" && isToolsSidebarCollapsed;
   const statusReactionSummary = useMemo(() => {
     if (!activeStatusDetail) {
       return [];
@@ -5109,11 +5233,31 @@ function CompactChatWorkspace({
                 setIsSidebarOpen(true);
               }}
               type="button"
-            >
-              <Sparkles className="h-5 w-5" />
+              >
+                <Sparkles className="h-5 w-5" />
               {statusCount > 0 ? (
                 <span className="absolute -right-1 -top-1 rounded-full bg-[#d98ad1] px-1.5 py-0.5 text-[10px] font-bold text-white">
                   {statusCount > 9 ? "9+" : statusCount}
+                </span>
+              ) : null}
+            </button>
+            <button
+              className={`relative grid h-11 w-11 place-items-center rounded-2xl transition ${
+                sidebarMode === "TOOLS"
+                  ? "bg-charcoal text-cloud shadow-[0_16px_24px_rgba(24,18,15,0.18)]"
+                  : "text-graphite/70 hover:bg-white hover:text-charcoal"
+              }`}
+              onClick={() => {
+                setIsToolsSidebarCollapsed(false);
+                setSidebarMode("TOOLS");
+                setIsSidebarOpen(true);
+              }}
+              type="button"
+            >
+              <ClipboardList className="h-5 w-5" />
+              {hasCoreWorkspaceTools ? (
+                <span className="absolute -right-1 -top-1 rounded-full bg-[#20c15a] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  Live
                 </span>
               ) : null}
             </button>
@@ -5161,8 +5305,12 @@ function CompactChatWorkspace({
         </aside>
 
         <aside
-          className={`absolute inset-y-0 left-0 z-30 flex min-h-0 w-[344px] max-w-[90vw] flex-col border-r border-charcoal/10 bg-[#f8f5ef] transition-transform duration-300 lg:static lg:translate-x-0 ${
+          className={`absolute inset-y-0 left-0 z-30 flex min-h-0 w-[344px] max-w-[90vw] flex-col border-r border-charcoal/10 bg-[#f8f5ef] transition-[transform,width,opacity] duration-300 ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:static lg:translate-x-0 ${
+            isDesktopToolsSidebarCollapsed
+              ? "lg:w-0 lg:min-w-0 lg:max-w-none lg:overflow-hidden lg:border-r-0 lg:opacity-0 lg:pointer-events-none"
+              : "lg:w-[344px] lg:min-w-[344px] lg:opacity-100"
           }`}
         >
           <header className="border-b border-charcoal/10 px-4 pb-4 pt-5">
@@ -5198,6 +5346,15 @@ function CompactChatWorkspace({
                     <Plus className="h-4 w-4" />
                   </button>
                 ) : null}
+                {sidebarMode === "TOOLS" ? (
+                  <button
+                    className="hidden h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-charcoal transition hover:border-charcoal/20 lg:grid"
+                    onClick={() => setIsToolsSidebarCollapsed(true)}
+                    type="button"
+                  >
+                    <PanelLeftClose className="h-4 w-4" />
+                  </button>
+                ) : null}
                 <button
                   className="grid h-10 w-10 place-items-center rounded-full border border-charcoal/10 bg-white text-charcoal transition hover:border-charcoal/20 lg:hidden"
                   onClick={() => setIsSidebarOpen(false)}
@@ -5226,6 +5383,8 @@ function CompactChatWorkspace({
                         ? "Search locked or archived chats"
                         : sidebarMode === "STATUS"
                           ? "Search status by name, @code, or caption"
+                        : sidebarMode === "TOOLS"
+                          ? "Search rooms by name, type, or @code"
                         : "Search name, @code, username, phone, or start a new chat"
                     }
                     value={searchQuery}
@@ -5432,13 +5591,16 @@ function CompactChatWorkspace({
                 ) : null}
 
                 {composerMode !== "DIRECT" && composerStage === "DETAILS" ? (
-                  <input
-                    aria-label="Room title"
-                    className="mt-4 w-full rounded-2xl border border-charcoal/10 bg-[#faf7f2] px-4 py-3 text-sm outline-none ring-honey/20 transition focus:ring-4"
-                    onChange={(event) => setComposerTitle(event.target.value)}
-                    placeholder={composerMode === "GROUP" ? "Group name" : "Channel name"}
-                    value={composerTitle}
-                  />
+                  <>
+                    <input
+                      aria-label="Room title"
+                      className="mt-4 w-full rounded-2xl border border-charcoal/10 bg-[#faf7f2] px-4 py-3 text-sm outline-none ring-honey/20 transition focus:ring-4"
+                      onChange={(event) => setComposerTitle(event.target.value)}
+                      placeholder={composerMode === "GROUP" ? "Group name" : "Channel name"}
+                      value={composerTitle}
+                    />
+                    <RoomCategoryPicker onChange={setComposerCategory} value={composerCategory} />
+                  </>
                 ) : null}
 
                 {composerMode !== "DIRECT" && composerStage === "PEOPLE" && visibleSearchResults.length > 0 ? (
@@ -5961,6 +6123,22 @@ function CompactChatWorkspace({
                                 <Archive className="h-3.5 w-3.5" />
                               </button>
                             </>
+                          ) : sidebarMode === "TOOLS" ? (
+                            <button
+                              className={`grid h-7 w-7 place-items-center rounded-full border transition ${
+                                isActive
+                                  ? "border-charcoal/12 bg-charcoal text-cloud"
+                                  : "border-charcoal/10 bg-white text-graphite/62 hover:text-charcoal"
+                              }`}
+                              onClick={() => {
+                                setSidebarMode("TOOLS");
+                                setActiveConversationId(conversation.id);
+                                setIsSidebarOpen(false);
+                              }}
+                              type="button"
+                            >
+                              <ClipboardList className="h-3.5 w-3.5" />
+                            </button>
                           ) : vaultView === "LOCKED" ? (
                             <>
                               <button
@@ -6027,7 +6205,18 @@ function CompactChatWorkspace({
           </div>
         </aside>
 
-        <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#efe6d7]">
+        <section className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-[#efe6d7]">
+          {isViewingTools && isDesktopToolsSidebarCollapsed ? (
+            <button
+              aria-label="Show room list"
+              className="absolute left-3 top-4 z-30 hidden items-center gap-2 rounded-full border border-charcoal/10 bg-white px-3 py-2 text-xs font-semibold text-charcoal shadow-[0_12px_30px_rgba(24,18,15,0.08)] transition hover:border-charcoal/20 hover:shadow-[0_16px_34px_rgba(24,18,15,0.12)] lg:inline-flex"
+              onClick={() => setIsToolsSidebarCollapsed(false)}
+              type="button"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+              Rooms
+            </button>
+          ) : null}
           <header className="sticky top-0 z-20 shrink-0 border-b border-charcoal/10 bg-white/90 px-3 py-2.5 backdrop-blur sm:px-4 sm:py-3 lg:static lg:bg-white/92 lg:backdrop-blur-0">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
               <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
@@ -6057,14 +6246,18 @@ function CompactChatWorkspace({
                           ? "My status"
                           : `${activeStatusThread.owner.displayName}'s status`
                         : "Status updates"
-                      : activeRoomLabel ?? "Choose a chat"}
+                      : isViewingTools
+                        ? activeRoomLabel ?? "Choose a room for tools"
+                        : activeRoomLabel ?? "Choose a chat"}
                   </p>
                   <p className="truncate text-[11px] text-graphite/60 sm:text-xs">
                     {isViewingStatuses
                       ? activeStatusDetail
                         ? `${activeStatusIndex + 1} of ${activeStatusThread?.items.length ?? 1} • expires ${statusExpiresLabel}`
                         : "Share photos, video, and text that roll off automatically."
-                      : activeConversation
+                      : isViewingTools
+                        ? toolsStatusLine
+                        : activeConversation
                         ? activeTypingUsers.length > 0
                           ? `${activeTypingUsers.map((user) => user.displayName).join(", ")} typing...`
                           : roomStatusLine
@@ -6106,6 +6299,44 @@ function CompactChatWorkspace({
                         <Plus className="h-4 w-4" />
                       </button>
                     ) : null}
+                  </>
+                ) : isViewingTools ? (
+                  <>
+                    <button
+                      className="hidden items-center gap-2 rounded-full border border-charcoal/10 bg-white px-3 py-2 text-[11px] font-semibold text-charcoal transition hover:border-charcoal/20 lg:inline-flex sm:px-4 sm:text-xs"
+                      onClick={() => setIsToolsSidebarCollapsed((current) => !current)}
+                      type="button"
+                    >
+                      {isDesktopToolsSidebarCollapsed ? (
+                        <PanelLeftOpen className="h-4 w-4" />
+                      ) : (
+                        <PanelLeftClose className="h-4 w-4" />
+                      )}
+                      {isDesktopToolsSidebarCollapsed ? "Show rooms" : "Hide rooms"}
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-2 rounded-full border border-charcoal/10 bg-white px-3 py-2 text-[11px] font-semibold text-charcoal transition hover:border-charcoal/20 sm:px-4 sm:text-xs"
+                      onClick={() => setSidebarMode("CHATS")}
+                      type="button"
+                    >
+                      <ArrowRight className="h-4 w-4 rotate-180" />
+                      Open chat
+                    </button>
+                    <button
+                      className="grid h-9 w-9 place-items-center rounded-full border border-charcoal/10 bg-white text-graphite/72 transition hover:text-charcoal disabled:opacity-50 sm:h-10 sm:w-10"
+                      disabled={!activeConversation}
+                      onClick={() => {
+                        if (isDetailsPanelOpen) {
+                          setIsDetailsPanelOpen(false);
+                          return;
+                        }
+
+                        openRoomDetails(isGroupThread ? "MEMBERS" : "OVERVIEW");
+                      }}
+                      type="button"
+                    >
+                      {isDetailsPanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+                    </button>
                   </>
                 ) : (
                   <>
@@ -6170,6 +6401,17 @@ function CompactChatWorkspace({
                         >
                           <PanelRightOpen className="h-4 w-4" />
                           {isGroupThread ? "Use the side panel for room details" : "Use the side panel for chat details"}
+                        </button>
+                        <button
+                          className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left text-sm font-semibold text-charcoal transition hover:bg-[#f5efe5]"
+                          onClick={() => {
+                            setSidebarMode("TOOLS");
+                            setIsConversationMenuOpen(false);
+                          }}
+                          type="button"
+                        >
+                          <ClipboardList className="h-4 w-4" />
+                          Open room tools
                         </button>
                         <button
                           className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left text-sm font-semibold text-charcoal transition hover:bg-[#f5efe5]"
@@ -6297,7 +6539,11 @@ function CompactChatWorkspace({
           </header>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-[#efe6d7] px-2 py-3 [background-image:radial-gradient(circle_at_1px_1px,rgba(120,98,68,0.08)_1px,transparent_0)] [background-size:18px_18px] sm:px-6 sm:py-6 sm:[background-size:24px_24px] xl:px-8">
-            <div className="mx-auto flex min-h-full w-full max-w-[1280px] flex-col">
+            <div
+              className={`mx-auto flex min-h-full w-full flex-col ${
+                isViewingTools ? "max-w-none" : "max-w-[1280px]"
+              }`}
+            >
               {isViewingStatuses ? (
                 <div className="relative flex min-h-[calc(100dvh-210px)] flex-1 items-center justify-center overflow-hidden rounded-[38px] border border-charcoal/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.24),rgba(26,20,17,0.96)_70%)] px-3 py-4 shadow-[0_28px_60px_rgba(24,18,15,0.12)] sm:px-6 sm:py-6">
                   <div className="pointer-events-none absolute inset-0">
@@ -7054,6 +7300,15 @@ function CompactChatWorkspace({
                     ) : null}
                   </aside>
                 */}</>
+              ) : isViewingTools ? (
+                <ToolsWorkspacePane
+                  accessToken={accessToken}
+                  conversation={activeConversation}
+                  isLoading={isToolsLoading}
+                  onNotice={onNotice}
+                  onRefresh={refreshActiveToolsWorkspace}
+                  workspace={toolsWorkspace}
+                />
               ) : !activeConversation ? (
                 <div className="grid flex-1 place-items-center py-10">
                 <div className="max-w-md rounded-[28px] bg-white/84 px-8 py-10 text-center shadow-[0_20px_50px_rgba(24,18,15,0.08)]">
@@ -7293,6 +7548,19 @@ function CompactChatWorkspace({
                                       Forward
                                     </button>
                                   ) : null}
+                                  {!message.deletedAt && hasCoreWorkspaceTools ? (
+                                    <button
+                                      className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left text-sm font-semibold text-charcoal transition hover:bg-[#f5efe5]"
+                                      onClick={() => {
+                                        setOpenMessageMenuId(null);
+                                        void handleCreateTaskFromMessage(message).catch(() => undefined);
+                                      }}
+                                      type="button"
+                                    >
+                                      <ClipboardList className="h-4 w-4" />
+                                      Convert to task
+                                    </button>
+                                  ) : null}
                                   <button
                                     className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left text-sm font-semibold text-charcoal transition hover:bg-[#f5efe5]"
                                     onClick={() => {
@@ -7416,7 +7684,7 @@ function CompactChatWorkspace({
             </div>
           </div>
 
-          {!isViewingStatuses ? (
+          {!isViewingStatuses && !isViewingTools ? (
             <form
               className="relative shrink-0 border-t border-charcoal/10 bg-[#f8f5ef]/98 px-2 py-2 pb-[calc(0.55rem+env(safe-area-inset-bottom))] backdrop-blur sm:bg-[#f8f5ef] sm:px-4 sm:py-4 sm:pb-4"
               onSubmit={handleSendMessage}

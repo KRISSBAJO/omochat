@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsArray, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
-import { ConversationType } from "@omochat/db";
+import { ConversationCategory, ConversationType } from "@omochat/db";
 
 export class CreateConversationDto {
   @ApiProperty({
@@ -10,6 +10,15 @@ export class CreateConversationDto {
   })
   @IsEnum(ConversationType)
   type: ConversationType = ConversationType.DIRECT;
+
+  @ApiPropertyOptional({
+    enum: ConversationCategory,
+    example: ConversationCategory.WORKSPACE,
+    description: "Optional room category for groups and channels. Direct chats always stay GENERAL."
+  })
+  @IsOptional()
+  @IsEnum(ConversationCategory)
+  category?: ConversationCategory;
 
   @ApiPropertyOptional({
     example: "Omochat Launch Room",

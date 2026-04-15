@@ -22,6 +22,8 @@ import { SafetyController } from "./safety/safety.controller";
 import { SafetyService } from "./safety/safety.service";
 import { StatusesController } from "./statuses/statuses.controller";
 import { StatusesService } from "./statuses/statuses.service";
+import { ToolsController } from "./tools/tools.controller";
+import { ToolsService } from "./tools/tools.service";
 import { UsersModule } from "./users/users.module";
 
 @Module({
@@ -35,7 +37,8 @@ import { UsersModule } from "./users/users.module";
     MessageRequestsController,
     NotificationsController,
     SafetyController,
-    StatusesController
+    StatusesController,
+    ToolsController
   ],
   providers: [
     CallsService,
@@ -48,6 +51,7 @@ import { UsersModule } from "./users/users.module";
     PushNotificationsService,
     SafetyService,
     StatusesService,
+    ToolsService,
     ChatGateway
   ]
 })
